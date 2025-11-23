@@ -1,0 +1,22 @@
+{
+  "name": "arabic-toons-discovery",
+  "version": "1.0.0",
+  "description": "استكشاف وتوثيق موقع arabic-toons.com",
+  "main": "index.js",
+  "scripts": {
+    "codegen": "playwright codegen https://www.arabic-toons.com",
+    "install-playwright": "npx playwright install"
+  },
+  "keywords": [
+    "arabic-toons",
+    "discovery",
+    "api",
+    "documentation"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "@playwright/test": "^1.40.0"
+  }
+}
+
