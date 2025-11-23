@@ -62,6 +62,46 @@ const SeasonDownloader = () => {
         return result;
     }, [episodes, searchQuery, sortBy, sortOrder]);
 
+    // Calculate season metadata
+    const seasonMetadata = useMemo(() => {
+        if (episodes.length === 0) return null;
+
+        // Extract series name from first episode
+        const firstTitle = episodes[0]?.title || '';
+        const seriesName = firstTitle
+            .replace(/\s*-?\s*(الحلقة|Episode|E|الموسم|Season|S)\s*\d+.*$/i, '')
+            .replace(/\s*-?\s*\d+.*$/i, '')
+            .trim() || 'Unknown Series';
+
+        // Calculate total size
+        const totalSizeBytes = episodes.reduce((sum, ep) => sum + (ep.metadata?.size_bytes || 0), 0);
+        const avgSizeBytes = episodes.length > 0 ? totalSizeBytes / episodes.length : 0;
+
+        // Format size helper
+        const formatSize = (bytes) => {
+            if (bytes >= 1024 * 1024 * 1024) {
+                return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`;
+            } else if (bytes >= 1024 * 1024) {
+                return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
+            } else {
+                return `${(bytes / 1024).toFixed(2)} KB`;
+            }
+        };
+
+        // Get poster/thumbnail (use first episode's thumbnail or placeholder)
+        const poster = episodes[0]?.thumbnail || null;
+
+        return {
+            seriesName,
+            totalEpisodes: episodes.length,
+            totalSize: formatSize(totalSizeBytes),
+            totalSizeBytes,
+            avgSize: formatSize(avgSizeBytes),
+            avgSizeBytes,
+            poster
+        };
+    }, [episodes]);
+
     const handleFetch = async () => {
         if (!url) return;
 
@@ -218,39 +258,109 @@ const SeasonDownloader = () => {
 
             {episodes.length > 0 && (
                 <div className="space-y-6">
-                    <div className="flex justify-between items-center pb-4 border-b border-gray-100 dark:border-gray-700">
-                        <h3 className="text-xl font-bold text-gray-800 dark:text-white flex items-center gap-2">
-                            <span className="bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 px-3 py-1 rounded-full text-sm">
-                                {filteredAndSortedEpisodes.length}
-                            </span>
-                            Episodes
-                            <span className="text-sm font-normal text-gray-500 dark:text-gray-400 ml-2">
-                                ({selectedEpisodes.size} selected)
-                            </span>
-                        </h3>
-                        <div className="flex gap-3">
-                            <button
-                                onClick={downloadAll}
-                                disabled={selectedEpisodes.size === 0}
-                                className="px-4 py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
-                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                                </svg>
-                                Save List
-                            </button>
-                            <button
-                                onClick={downloadIDM}
-                                disabled={selectedEpisodes.size === 0}
-                                className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium transition-colors flex items-center gap-2 shadow-lg shadow-green-600/20 disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
-                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                                </svg>
-                                Export to IDM
-                            </button>
+                    {/* Season Header */}
+                    {seasonMetadata && (
+                        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 dark:from-gray-800 dark:via-gray-900 dark:to-gray-800 border border-gray-200 dark:border-gray-700 shadow-xl">
+                            {/* Background Pattern */}
+                            <div className="absolute inset-0 opacity-10">
+                                <div className="absolute inset-0 bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500"></div>
+                            </div>
+
+                            <div className="relative p-8">
+                                <div className="flex flex-col md:flex-row gap-6 items-start">
+                                    {/* Poster */}
+                                    <div className="shrink-0">
+                                        {seasonMetadata.poster ? (
+                                            <img
+                                                src={seasonMetadata.poster}
+                                                alt={seasonMetadata.seriesName}
+                                                className="w-32 h-48 md:w-40 md:h-60 rounded-xl object-cover shadow-2xl border-4 border-white dark:border-gray-700"
+                                            />
+                                        ) : (
+                                            <div className="w-32 h-48 md:w-40 md:h-60 rounded-xl bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center shadow-2xl border-4 border-white dark:border-gray-700">
+                                                <svg xmlns="http://www.w3.org/2000/svg" className="h-20 w-20 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z" />
+                                                </svg>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    {/* Info */}
+                                    <div className="flex-1 min-w-0">
+                                        <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4 truncate">
+                                            {seasonMetadata.seriesName}
+                                        </h2>
+
+                                        {/* Stats Grid */}
+                                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                                            <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-xl p-4 border border-gray-200 dark:border-gray-700">
+                                                <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">Episodes</div>
+                                                <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                                                    {seasonMetadata.totalEpisodes}
+                                                </div>
+                                            </div>
+
+                                            <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-xl p-4 border border-gray-200 dark:border-gray-700">
+                                                <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">Total Size</div>
+                                                <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">
+                                                    {seasonMetadata.totalSize}
+                                                </div>
+                                            </div>
+
+                                            <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-xl p-4 border border-gray-200 dark:border-gray-700">
+                                                <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">Avg Size</div>
+                                                <div className="text-2xl font-bold text-pink-600 dark:text-pink-400">
+                                                    {seasonMetadata.avgSize}
+                                                </div>
+                                            </div>
+
+                                            <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-xl p-4 border border-gray-200 dark:border-gray-700">
+                                                <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">Selected</div>
+                                                <div className="text-2xl font-bold text-green-600 dark:text-green-400">
+                                                    {selectedEpisodes.size}
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Action Buttons */}
+                                        <div className="flex flex-wrap gap-3">
+                                            <button
+                                                onClick={downloadAll}
+                                                disabled={selectedEpisodes.size === 0}
+                                                className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold shadow-lg shadow-blue-600/30 disabled:opacity-50 disabled:cursor-not-allowed transition-all transform hover:scale-105 active:scale-95 flex items-center gap-2"
+                                            >
+                                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                                                </svg>
+                                                Save List
+                                            </button>
+
+                                            <button
+                                                onClick={downloadIDM}
+                                                disabled={selectedEpisodes.size === 0}
+                                                className="px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-xl font-semibold shadow-lg shadow-green-600/30 disabled:opacity-50 disabled:cursor-not-allowed transition-all transform hover:scale-105 active:scale-95 flex items-center gap-2"
+                                            >
+                                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10" />
+                                                </svg>
+                                                Export to IDM
+                                            </button>
+
+                                            <button
+                                                onClick={toggleSelectAll}
+                                                className="px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-xl font-semibold shadow-lg shadow-purple-600/30 transition-all transform hover:scale-105 active:scale-95 flex items-center gap-2"
+                                            >
+                                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+                                                </svg>
+                                                {selectedEpisodes.size === filteredAndSortedEpisodes.length ? 'Deselect All' : 'Select All'}
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-                    </div>
+                    )}
 
                     <div className="flex flex-col md:flex-row gap-3">
                         <input
@@ -277,17 +387,8 @@ const SeasonDownloader = () => {
                         </button>
                     </div>
 
-                    <div className="flex items-center gap-2 px-2">
-                        <input
-                            type="checkbox"
-                            checked={selectedEpisodes.size === filteredAndSortedEpisodes.length && filteredAndSortedEpisodes.length > 0}
-                            onChange={toggleSelectAll}
-                            className="w-5 h-5 rounded border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-blue-600 focus:ring-blue-500 cursor-pointer"
-                        />
-                        <span className="text-gray-700 dark:text-gray-300 text-sm font-medium">
-                            Select All
-                        </span>
-                    </div>
+
+                    {/* Episodes List */}
 
                     <div className="grid gap-3 max-h-[600px] overflow-y-auto pr-2 custom-scrollbar">
                         {filteredAndSortedEpisodes.map((ep, idx) => (
