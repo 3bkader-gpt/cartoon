@@ -1,0 +1,12 @@
+.venv\Scripts\activate
+
+python start_backend.py
+
+
+----------------------------------
+
+.venv\Scripts\activate
+
+cd frontend
+
+npm run dev

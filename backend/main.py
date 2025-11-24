@@ -10,7 +10,7 @@ import json
 # Add parent directory to path to import api module
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from api.arabic_toons_api import ArabicToonsAPI
+from backend.api.arabic_toons_api import ArabicToonsAPI
 
 app = FastAPI(title="Arabic Toons API")
 
