@@ -6,6 +6,15 @@
   font-family: 'Inter', system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
   font-weight: 400;
+
+  /* Theme Colors (Dynamic) */
+  --theme-primary: #3b82f6;
+  --theme-primary-hover: #2563eb;
+  --theme-primary-light: #dbeafe;
+  --theme-primary-dark: #1e40af;
+
+  /* Transition for theme changes */
+  transition: --theme-primary 0.3s ease, --theme-primary-hover 0.3s ease;
 }
 
 /* Dark mode (default) */
