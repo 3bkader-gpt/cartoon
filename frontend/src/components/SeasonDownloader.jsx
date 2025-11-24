@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useMemo, forwardRef, useImperativeHandle } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { streamSeason } from '../api';
 import { historyStorage } from '../utils/historyStorage';
+import { fadeIn, slideUp, staggerContainer, cardAnimation } from '../utils/animations';
 
 const SeasonDownloader = forwardRef((props, ref) => {
     const [url, setUrl] = useState('');
@@ -448,119 +450,135 @@ const SeasonDownloader = forwardRef((props, ref) => {
 
 
                     {/* Episodes Grid */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 max-h-[800px] overflow-y-auto pr-2 custom-scrollbar">
-                        {filteredAndSortedEpisodes.map((ep, idx) => (
-                            <div
-                                key={idx}
-                                className={`group relative bg-white dark:bg-gray-800 rounded-2xl border-2 border-gray-200 dark:border-gray-700 hover:border-blue-400 dark:hover:border-blue-500 transition-all duration-300 overflow-hidden shadow-lg hover:shadow-2xl hover:scale-105 transform animate-fade-in ${idx < 8 ? `stagger-${(idx % 8) + 1}` : ''}`}
-                            >
-                                {/* Checkbox - Top Left Corner */}
-                                <div className="absolute top-3 left-3 z-10">
-                                    <input
-                                        type="checkbox"
-                                        checked={selectedEpisodes.has(idx)}
-                                        onChange={() => toggleSelection(idx)}
-                                        className="w-6 h-6 rounded-lg border-2 border-white bg-white/90 backdrop-blur-sm text-blue-600 focus:ring-blue-500 cursor-pointer shadow-lg"
-                                    />
-                                </div>
-
-                                {/* Episode Number Badge - Top Right Corner */}
-                                <div className="absolute top-3 right-3 z-10 bg-blue-600 text-white px-3 py-1 rounded-full text-sm font-bold shadow-lg">
-                                    #{idx + 1}
-                                </div>
-
-                                {/* Thumbnail */}
-                                <div className="relative aspect-video w-full overflow-hidden bg-gradient-to-br from-blue-100 to-purple-100 dark:from-blue-900/30 dark:to-purple-900/30">
-                                    {ep.thumbnail ? (
-                                        <img
-                                            src={ep.thumbnail}
-                                            alt={ep.title}
-                                            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                    <motion.div
+                        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 max-h-[800px] overflow-y-auto pr-2 custom-scrollbar"
+                        variants={staggerContainer}
+                        initial="hidden"
+                        animate="visible"
+                    >
+                        <AnimatePresence mode='popLayout'>
+                            {filteredAndSortedEpisodes.map((ep, idx) => (
+                                <motion.div
+                                    key={ep.video_url || idx}
+                                    layout
+                                    variants={cardAnimation}
+                                    initial="hidden"
+                                    animate="visible"
+                                    exit="hidden"
+                                    whileHover="hover"
+                                    whileTap="tap"
+                                    className="group relative bg-white dark:bg-gray-800 rounded-2xl border-2 border-gray-200 dark:border-gray-700 hover:border-blue-400 dark:hover:border-blue-500 transition-colors duration-300 overflow-hidden shadow-lg hover:shadow-2xl"
+                                >
+                                    {/* Checkbox - Top Left Corner */}
+                                    <div className="absolute top-3 left-3 z-10">
+                                        <input
+                                            type="checkbox"
+                                            checked={selectedEpisodes.has(idx)}
+                                            onChange={() => toggleSelection(idx)}
+                                            className="w-6 h-6 rounded-lg border-2 border-white bg-white/90 backdrop-blur-sm text-blue-600 focus:ring-blue-500 cursor-pointer shadow-lg"
                                         />
-                                    ) : (
-                                        <div className="w-full h-full flex items-center justify-center">
-                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 text-blue-400 dark:text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                                            </svg>
-                                        </div>
-                                    )}
+                                    </div>
 
-                                    {/* Gradient Overlay */}
-                                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                                </div>
+                                    {/* Episode Number Badge - Top Right Corner */}
+                                    <div className="absolute top-3 right-3 z-10 bg-blue-600 text-white px-3 py-1 rounded-full text-sm font-bold shadow-lg">
+                                        #{idx + 1}
+                                    </div>
 
-                                {/* Card Content */}
-                                <div className="p-4 space-y-3">
-                                    {/* Title */}
-                                    <h4 className="font-bold text-gray-900 dark:text-white text-sm line-clamp-2 min-h-[2.5rem]" title={ep.title}>
-                                        {ep.title}
-                                    </h4>
-
-                                    {/* Metadata */}
-                                    <div className="space-y-2">
-                                        {/* Filename */}
-                                        <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
-                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-                                            </svg>
-                                            <span className="truncate font-mono">{ep.video_info?.filename || 'video.mp4'}</span>
-                                        </div>
-
-                                        {/* File Size */}
-                                        {ep.metadata?.size_formatted && (
-                                            <div className="flex items-center gap-2 text-xs">
-                                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-purple-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4" />
+                                    {/* Thumbnail */}
+                                    <div className="relative aspect-video w-full overflow-hidden bg-gradient-to-br from-blue-100 to-purple-100 dark:from-blue-900/30 dark:to-purple-900/30">
+                                        {ep.thumbnail ? (
+                                            <motion.img
+                                                src={ep.thumbnail}
+                                                alt={ep.title}
+                                                className="w-full h-full object-cover"
+                                                whileHover={{ scale: 1.1 }}
+                                                transition={{ duration: 0.3 }}
+                                            />
+                                        ) : (
+                                            <div className="w-full h-full flex items-center justify-center">
+                                                <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 text-blue-400 dark:text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
                                                 </svg>
-                                                <span className="font-semibold text-purple-600 dark:text-purple-400">
-                                                    {ep.metadata.size_formatted}
-                                                </span>
                                             </div>
                                         )}
+
+                                        {/* Gradient Overlay */}
+                                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                                     </div>
 
-                                    {/* Action Buttons */}
-                                    <div className="flex gap-2 pt-2">
-                                        <button
-                                            onClick={() => copyToClipboard(ep.video_url, idx)}
-                                            className="flex-1 px-3 py-2 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/50 rounded-lg text-xs font-medium transition-colors flex items-center justify-center gap-1"
-                                            title="Copy URL"
-                                        >
-                                            {copied === idx ? (
-                                                <>
-                                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                                                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                    {/* Card Content */}
+                                    <div className="p-4 space-y-3">
+                                        {/* Title */}
+                                        <h4 className="font-bold text-gray-900 dark:text-white text-sm line-clamp-2 min-h-[2.5rem]" title={ep.title}>
+                                            {ep.title}
+                                        </h4>
+
+                                        {/* Metadata */}
+                                        <div className="space-y-2">
+                                            {/* Filename */}
+                                            <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+                                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                                                </svg>
+                                                <span className="truncate font-mono">{ep.video_info?.filename || 'video.mp4'}</span>
+                                            </div>
+
+                                            {/* File Size */}
+                                            {ep.metadata?.size_formatted && (
+                                                <div className="flex items-center gap-2 text-xs">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-purple-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4" />
                                                     </svg>
-                                                    Copied
-                                                </>
-                                            ) : (
-                                                <>
-                                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                                                    </svg>
-                                                    Copy
-                                                </>
+                                                    <span className="font-semibold text-purple-600 dark:text-purple-400">
+                                                        {ep.metadata.size_formatted}
+                                                    </span>
+                                                </div>
                                             )}
-                                        </button>
+                                        </div>
 
-                                        <a
-                                            href={`http://127.0.0.1:8000/api/proxy?url=${encodeURIComponent(ep.video_url)}&filename=${encodeURIComponent(ep.video_info?.filename || 'episode.mp4')}`}
-                                            download
-                                            className="flex-1 px-3 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-xs font-medium transition-colors flex items-center justify-center gap-1 shadow-lg shadow-green-600/20"
-                                            title="Download"
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                        >
-                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                                            </svg>
-                                            Download
-                                        </a>
+                                        {/* Action Buttons */}
+                                        <div className="flex gap-2 pt-2">
+                                            <button
+                                                onClick={() => copyToClipboard(ep.video_url, idx)}
+                                                className="flex-1 px-3 py-2 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/50 rounded-lg text-xs font-medium transition-colors flex items-center justify-center gap-1"
+                                                title="Copy URL"
+                                            >
+                                                {copied === idx ? (
+                                                    <>
+                                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                                                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                                        </svg>
+                                                        Copied
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                                                        </svg>
+                                                        Copy
+                                                    </>
+                                                )}
+                                            </button>
+
+                                            <a
+                                                href={`http://127.0.0.1:8000/api/proxy?url=${encodeURIComponent(ep.video_url)}&filename=${encodeURIComponent(ep.video_info?.filename || 'episode.mp4')}`}
+                                                download
+                                                className="flex-1 px-3 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-xs font-medium transition-colors flex items-center justify-center gap-1 shadow-lg shadow-green-600/20"
+                                                title="Download"
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                            >
+                                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                                                </svg>
+                                                Download
+                                            </a>
+                                        </div>
                                     </div>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
+                                </motion.div>
+                            ))}
+                        </AnimatePresence>
+                    </motion.div>
                 </div>
             )}
         </div>
