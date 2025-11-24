@@ -244,6 +244,35 @@ const SeasonDownloader = () => {
                     <div className="mt-2 text-center text-xs text-blue-600 dark:text-blue-400 font-mono">
                         {progress.current} / {progress.total} Episodes Processed
                     </div>
+
+                    {/* Loading Skeleton Cards */}
+                    <div className="mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                        {[...Array(8)].map((_, idx) => (
+                            <div key={idx} className="bg-white dark:bg-gray-800 rounded-2xl border-2 border-gray-200 dark:border-gray-700 overflow-hidden shadow-lg">
+                                {/* Skeleton Thumbnail */}
+                                <div className="aspect-video w-full skeleton"></div>
+
+                                {/* Skeleton Content */}
+                                <div className="p-4 space-y-3">
+                                    {/* Skeleton Title */}
+                                    <div className="h-4 skeleton rounded w-3/4"></div>
+                                    <div className="h-4 skeleton rounded w-1/2"></div>
+
+                                    {/* Skeleton Metadata */}
+                                    <div className="space-y-2">
+                                        <div className="h-3 skeleton rounded w-full"></div>
+                                        <div className="h-3 skeleton rounded w-2/3"></div>
+                                    </div>
+
+                                    {/* Skeleton Buttons */}
+                                    <div className="flex gap-2 pt-2">
+                                        <div className="flex-1 h-8 skeleton rounded-lg"></div>
+                                        <div className="flex-1 h-8 skeleton rounded-lg"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
                 </div>
             )}
 
@@ -393,7 +422,7 @@ const SeasonDownloader = () => {
                         {filteredAndSortedEpisodes.map((ep, idx) => (
                             <div
                                 key={idx}
-                                className="group relative bg-white dark:bg-gray-800 rounded-2xl border-2 border-gray-200 dark:border-gray-700 hover:border-blue-400 dark:hover:border-blue-500 transition-all duration-300 overflow-hidden shadow-lg hover:shadow-2xl hover:scale-105 transform"
+                                className={`group relative bg-white dark:bg-gray-800 rounded-2xl border-2 border-gray-200 dark:border-gray-700 hover:border-blue-400 dark:hover:border-blue-500 transition-all duration-300 overflow-hidden shadow-lg hover:shadow-2xl hover:scale-105 transform animate-fade-in ${idx < 8 ? `stagger-${(idx % 8) + 1}` : ''}`}
                             >
                                 {/* Checkbox - Top Left Corner */}
                                 <div className="absolute top-3 left-3 z-10">
