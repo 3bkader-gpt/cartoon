@@ -1,10 +1,12 @@
 # 🎬 Arabic Toons Downloader
 
-**Version**: v1.0-stable  
+**Version**: v2.1-simplified  
 **Status**: ✅ Production Ready  
-**Last Updated**: 2025-11-23
+**Last Updated**: 2025-11-24
 
 A modern, feature-rich web application for downloading episodes from Arabic Toons with advanced selection, sorting, and export capabilities.
+
+> **Note**: The 8-color theme system has been removed in favor of simplicity and performance. Dark/Light mode is still available.
 
 ---
 
@@ -15,6 +17,7 @@ A modern, feature-rich web application for downloading episodes from Arabic Toon
 - ✅ **Progress Tracking** - Real-time progress bar during extraction
 - ✅ **Metadata Display** - File size, thumbnails, and episode info
 - ✅ **Proxy Download** - Bypass 403 Forbidden errors
+- ✅ **Download History** - Track last 10 downloads with stats
 
 ### Selection System
 - ✅ **Individual Selection** - Checkbox for each episode
@@ -39,6 +42,7 @@ A modern, feature-rich web application for downloading episodes from Arabic Toon
 - ✅ **Responsive Design** - Works on mobile and desktop
 - ✅ **Smooth Animations** - Hover effects and transitions
 - ✅ **Modern Design** - Clean, professional interface
+- ✅ **Grid Layout** - Beautiful card-based episode display
 
 ---
 
