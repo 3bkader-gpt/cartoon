@@ -1,7 +1,8 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, forwardRef, useImperativeHandle } from 'react';
 import { streamSeason } from '../api';
+import { historyStorage } from '../utils/historyStorage';
 
-const SeasonDownloader = () => {
+const SeasonDownloader = forwardRef((props, ref) => {
     const [url, setUrl] = useState('');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
@@ -102,6 +103,20 @@ const SeasonDownloader = () => {
         };
     }, [episodes]);
 
+    // Expose methods to parent via ref
+    useImperativeHandle(ref, () => ({
+        loadFromHistory: (historyUrl) => {
+            setUrl(historyUrl);
+            // Trigger fetch automatically
+            setTimeout(() => {
+                const fetchButton = document.querySelector('button[type="submit"]');
+                if (fetchButton) {
+                    fetchButton.click();
+                }
+            }, 100);
+        }
+    }));
+
     const handleFetch = async () => {
         if (!url) return;
 
@@ -134,6 +149,21 @@ const SeasonDownloader = () => {
             setProgress(null);
         }
     };
+
+    // Save to history when episodes are loaded
+    useEffect(() => {
+        if (episodes.length > 0 && seasonMetadata && url) {
+            historyStorage.addHistory({
+                seriesName: seasonMetadata.seriesName,
+                url: url,
+                episodeCount: seasonMetadata.totalEpisodes,
+                totalSize: seasonMetadata.totalSize,
+                totalSizeBytes: seasonMetadata.totalSizeBytes,
+                selectedCount: selectedEpisodes.size,
+                poster: seasonMetadata.poster,
+            });
+        }
+    }, [episodes.length, seasonMetadata, url, selectedEpisodes.size]);
 
     const toggleSelection = (idx) => {
         setSelectedEpisodes(prev => {
@@ -535,6 +565,6 @@ const SeasonDownloader = () => {
             )}
         </div>
     );
-};
+});
 
 export default SeasonDownloader;

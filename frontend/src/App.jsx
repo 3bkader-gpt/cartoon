@@ -1,11 +1,20 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import SeasonDownloader from './components/SeasonDownloader';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { ColorThemeProvider } from './contexts/ColorThemeContext';
 import ThemeToggle from './components/ThemeToggle';
 import ThemePicker from './components/ThemePicker';
+import DownloadHistory from './components/DownloadHistory';
 
 function App() {
+  const seasonDownloaderRef = useRef(null);
+
+  const handleSelectHistory = (url) => {
+    if (seasonDownloaderRef.current) {
+      seasonDownloaderRef.current.loadFromHistory(url);
+    }
+  };
+
   return (
     <ThemeProvider>
       <ColorThemeProvider>
@@ -23,6 +32,7 @@ function App() {
                 </h1>
               </div>
               <div className="flex items-center gap-3">
+                <DownloadHistory onSelectHistory={handleSelectHistory} />
                 <ThemePicker />
                 <ThemeToggle />
               </div>
@@ -38,7 +48,7 @@ function App() {
                 </p>
               </div>
 
-              <SeasonDownloader />
+              <SeasonDownloader ref={seasonDownloaderRef} />
             </main>
 
             <footer className="mt-20 text-center text-gray-500 dark:text-gray-400 text-sm">
