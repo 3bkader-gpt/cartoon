@@ -4,7 +4,7 @@
  */
 
 const DB_NAME = 'CartoonDownloaderDB';
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 const SEASONS_STORE = 'seasons';
 const EPISODES_STORE = 'episodes';
 
@@ -35,13 +35,14 @@ class CacheManager {
                     seasonsStore.createIndex('cached_at', 'cached_at', { unique: false });
                 }
 
-                // Create episodes store
-                if (!db.objectStoreNames.contains(EPISODES_STORE)) {
-                    const episodesStore = db.createObjectStore(EPISODES_STORE, {
-                        keyPath: ['season_url', 'episode_number']
-                    });
-                    episodesStore.createIndex('season_url', 'season_url', { unique: false });
+                // Recreate episodes store with correct schema
+                if (db.objectStoreNames.contains(EPISODES_STORE)) {
+                    db.deleteObjectStore(EPISODES_STORE);
                 }
+                const episodesStore = db.createObjectStore(EPISODES_STORE, {
+                    autoIncrement: true
+                });
+                episodesStore.createIndex('season_url', 'season_url', { unique: false });
             };
         });
     }
