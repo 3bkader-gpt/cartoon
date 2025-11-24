@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { streamSeason } from '../api';
 import { historyStorage } from '../utils/historyStorage';
 import { fadeIn, slideUp, staggerContainer, cardAnimation } from '../utils/animations';
+import cacheManager from '../utils/cache';
 
 const SeasonDownloader = forwardRef((props, ref) => {
     const [url, setUrl] = useState('');
@@ -12,6 +13,8 @@ const SeasonDownloader = forwardRef((props, ref) => {
     const [progress, setProgress] = useState(null);
     const [copied, setCopied] = useState(null);
     const [selectedEpisodes, setSelectedEpisodes] = useState(new Set());
+    const [isCached, setIsCached] = useState(false);
+    const [showToast, setShowToast] = useState(false);
 
     // Sorting & Filtering
     const [sortBy, setSortBy] = useState('episode');
@@ -119,7 +122,7 @@ const SeasonDownloader = forwardRef((props, ref) => {
         }
     }));
 
-    const handleFetch = async () => {
+    const handleFetch = async (forceRefresh = false) => {
         if (!url) return;
 
         setLoading(true);
@@ -127,8 +130,28 @@ const SeasonDownloader = forwardRef((props, ref) => {
         setEpisodes([]);
         setProgress(null);
         setSelectedEpisodes(new Set());
+        setIsCached(false);
 
         try {
+            // Check cache first (unless force refresh)
+            if (!forceRefresh) {
+                const cachedData = await cacheManager.getFullSeason(url);
+                if (cachedData && cachedData.episodes.length > 0) {
+                    // Load from cache instantly
+                    setEpisodes(cachedData.episodes);
+                    setIsCached(true);
+                    setLoading(false);
+
+                    // Show toast
+                    setShowToast(true);
+                    setTimeout(() => setShowToast(false), 3000);
+
+                    return;
+                }
+            }
+
+            // Fetch from backend
+            const fetchedEpisodes = [];
             await streamSeason(url, (data) => {
                 if (data.type === 'start') {
                     setProgress({ current: 0, total: data.total, title: 'Starting...' });
@@ -139,17 +162,55 @@ const SeasonDownloader = forwardRef((props, ref) => {
                         title: `Processing: ${data.title}`
                     });
                 } else if (data.type === 'result') {
+                    fetchedEpisodes.push(data.data);
                     setEpisodes(prev => [...prev, data.data]);
                 } else if (data.type === 'error') {
                     console.error("Episode error:", data);
                 }
             });
+
+            // Save to cache after successful fetch
+            if (fetchedEpisodes.length > 0) {
+                // Calculate metadata for cache
+                const firstTitle = fetchedEpisodes[0]?.title || '';
+                const seriesName = firstTitle
+                    .replace(/\s*-?\s*(الحلقة|Episode|E|الموسم|Season|S)\s*\d+.*$/i, '')
+                    .replace(/\s*-?\s*\d+.*$/i, '')
+                    .trim() || 'Unknown Series';
+
+                const totalSizeBytes = fetchedEpisodes.reduce((sum, ep) => sum + (ep.metadata?.size_bytes || 0), 0);
+                const formatSize = (bytes) => {
+                    if (bytes >= 1024 * 1024 * 1024) {
+                        return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`;
+                    } else if (bytes >= 1024 * 1024) {
+                        return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
+                    } else {
+                        return `${(bytes / 1024).toFixed(2)} KB`;
+                    }
+                };
+
+                const metadata = {
+                    seriesName,
+                    totalEpisodes: fetchedEpisodes.length,
+                    totalSize: formatSize(totalSizeBytes),
+                    totalSizeBytes,
+                    poster: fetchedEpisodes[0]?.thumbnail || null
+                };
+
+                await cacheManager.saveSeason(url, metadata, fetchedEpisodes);
+            }
         } catch (err) {
             setError(err.message || 'Failed to fetch episodes');
         } finally {
             setLoading(false);
             setProgress(null);
         }
+    };
+
+    const handleRefresh = async () => {
+        if (!url) return;
+        await cacheManager.deleteSeason(url);
+        await handleFetch(true);
     };
 
     // Save to history when episodes are loaded
@@ -234,6 +295,22 @@ const SeasonDownloader = forwardRef((props, ref) => {
 
     return (
         <div className="w-full max-w-4xl mx-auto p-6 bg-white dark:bg-gray-800 rounded-2xl shadow-xl transition-colors duration-200">
+            {/* Toast Notification */}
+            <AnimatePresence>
+                {showToast && (
+                    <motion.div
+                        initial={{ opacity: 0, y: -50 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -50 }}
+                        className="fixed top-4 right-4 z-50 bg-green-600 text-white px-6 py-3 rounded-xl shadow-2xl flex items-center gap-3"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                        </svg>
+                        <span className="font-semibold">Loaded from cache ⚡</span>
+                    </motion.div>
+                )}
+            </AnimatePresence>
 
             <div className="flex flex-col md:flex-row gap-4 mb-8">
                 <input
@@ -416,6 +493,19 @@ const SeasonDownloader = forwardRef((props, ref) => {
                                                 </svg>
                                                 {selectedEpisodes.size === filteredAndSortedEpisodes.length ? 'Deselect All' : 'Select All'}
                                             </button>
+
+                                            {isCached && (
+                                                <button
+                                                    onClick={handleRefresh}
+                                                    className="px-6 py-3 bg-orange-600 hover:bg-orange-700 text-white rounded-xl font-semibold shadow-lg shadow-orange-600/30 transition-all transform hover:scale-105 active:scale-95 flex items-center gap-2"
+                                                    title="Refresh from server"
+                                                >
+                                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                                    </svg>
+                                                    Refresh
+                                                </button>
+                                            )}
                                         </div>
                                     </div>
                                 </div>
