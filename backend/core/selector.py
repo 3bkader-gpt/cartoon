@@ -1,6 +1,8 @@
 from typing import Optional
 from ..sites.arabic_toons.scraper import ArabicToonsScraper
 from ..sites.arabic_toons.config import SUPPORTED_PATTERNS as ARABIC_TOONS_PATTERNS
+from ..sites.egydead.scraper import EgyDeadScraper
+from ..sites.egydead.config import SUPPORTED_PATTERNS as EGYDEAD_PATTERNS
 from .browser import BrowserManager
 
 class ScraperSelector:
@@ -15,10 +17,10 @@ class ScraperSelector:
         # Check Arabic Toons
         if any(pattern in url for pattern in ARABIC_TOONS_PATTERNS):
             return ArabicToonsScraper(self.browser_manager)
-            
-        # Future sites go here...
-        # if any(pattern in url for pattern in SITE2_PATTERNS):
-        #     return Site2Scraper(self.browser_manager)
+        
+        # Check EgyDead
+        if any(pattern in url for pattern in EGYDEAD_PATTERNS):
+            return EgyDeadScraper(self.browser_manager)
             
         raise ValueError(f"No scraper found for URL: {url}")
 
