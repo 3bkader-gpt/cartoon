@@ -3,7 +3,7 @@ import logging
 import requests
 import traceback
 from typing import List, Dict, Generator
-from ...core.browser import BrowserManager
+from ..core.browser import BrowserManager
 from .parser import ArabicToonsParser
 from .config import BASE_URL, SELECTORS
 

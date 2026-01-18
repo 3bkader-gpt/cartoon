@@ -331,7 +331,7 @@ const SeasonDownloader = forwardRef((props, ref) => {
                     type="text"
                     value={url}
                     onChange={(e) => setUrl(e.target.value)}
-                    placeholder="Paste series or episode URL here..."
+                    placeholder="Paste Arabic Toons series or episode URL here..."
                     className="flex-1 p-4 rounded-xl border-2 border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all outline-none text-lg"
                     dir="ltr"
                 />

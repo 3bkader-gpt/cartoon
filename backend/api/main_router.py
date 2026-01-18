@@ -5,7 +5,8 @@ import json
 import logging
 import traceback
 import sys
-from ..core.selector import ScraperSelector
+from ..scraper.scraper import ArabicToonsScraper
+from ..core.browser import BrowserManager
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -13,78 +14,49 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
-# Create selector lazily to avoid import-time issues
-_selector = None
+# Global scraper instance
+_scraper = None
 
-def get_selector():
-    global _selector
-    if _selector is None:
-        print("[INIT] Creating ScraperSelector...", flush=True)
-        _selector = ScraperSelector()
-        print("[INIT] ScraperSelector created", flush=True)
-    return _selector
+def get_scraper():
+    global _scraper
+    if _scraper is None:
+        print("[INIT] Initializing Arabic Toons Scraper...", flush=True)
+        # BrowserManager will be created inside if not passed, but we pass None to let it handle it
+        # or we can create it here if we want more control. 
+        # Scraper __init__ handles BrowserManager() creation if None.
+        _scraper = ArabicToonsScraper()
+        print("[INIT] Scraper initialized successfully", flush=True)
+    return _scraper
 
 class URLRequest(BaseModel):
     url: str
 
 @router.get("/season/stream")
-def stream_season(url: str):  # Changed to sync function
-    """Stream season episodes - using sync to work with Playwright"""
-    with open("backend_debug.log", "a", encoding="utf-8") as f:
-        f.write(f"\n{'='*60}\n")
-        f.write(f"🎬 stream_season called with URL: {url}\n")
-    
+def stream_season(url: str):
+    """Stream season episodes from Arabic Toons"""
+    # Log simplified for production/cleanliness, but keeping debug file for safely
     try:
-        with open("backend_debug.log", "a", encoding="utf-8") as f:
-            f.write("[1] Getting selector...\n")
-        selector = get_selector()
-        
-        with open("backend_debug.log", "a", encoding="utf-8") as f:
-            f.write(f"[2] Selector: {selector}\n")
-            f.write("[3] Getting scraper...\n")
-        
-        scraper = selector.get_scraper(url)
-        
-        with open("backend_debug.log", "a", encoding="utf-8") as f:
-            f.write(f"[4] Scraper: {type(scraper).__name__}\n")
+        scraper = get_scraper()
         
         def event_generator():
             try:
-                with open("backend_debug.log", "a", encoding="utf-8") as f:
-                    f.write("[5] Starting generator...\n")
-                    f.write("[6] Calling download_season_generator...\n")
-                
                 event_count = 0
                 for event in scraper.download_season_generator(url):
                     event_count += 1
-                    event_type = event.get('type', 'unknown')
-                    with open("backend_debug.log", "a", encoding="utf-8") as f:
-                        f.write(f"[7] Event #{event_count}: {event_type}\n")
                     yield json.dumps(event) + "\n"
                 
-                with open("backend_debug.log", "a", encoding="utf-8") as f:
-                    f.write(f"[8] Generator done. Total: {event_count}\n")
+                logger.info(f"Stream completed. Total events: {event_count}")
             except Exception as e:
                 err_msg = repr(e)
-                with open("backend_debug.log", "a", encoding="utf-8") as f:
-                    f.write(f"[ERROR] Generator exception: {err_msg}\n")
-                    f.write(traceback.format_exc() + "\n")
+                logger.error(f"Generator error: {err_msg}")
+                logger.error(traceback.format_exc())
                 yield json.dumps({'type': 'error', 'message': err_msg}) + "\n"
         
-        with open("backend_debug.log", "a", encoding="utf-8") as f:
-            f.write("[9] Returning StreamingResponse\n")
         return StreamingResponse(event_generator(), media_type="text/event-stream")
         
-    except ValueError as e:
-        err_msg = repr(e)
-        with open("backend_debug.log", "a", encoding="utf-8") as f:
-            f.write(f"[ERROR] ValueError: {err_msg}\n")
-        raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
-        err_msg = repr(e)
-        with open("backend_debug.log", "a", encoding="utf-8") as f:
-            f.write(f"[ERROR] Exception: {err_msg}\n")
-            f.write(traceback.format_exc() + "\n")
+        logger.error(f"Stream endpoint error: {e}")
+        logger.error(traceback.format_exc())
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -93,9 +65,10 @@ from fastapi import Request
 
 @router.on_event("shutdown")
 def shutdown_event():
-    global _selector
-    if _selector:
-        _selector.close()
+    global _scraper
+    if _scraper and _scraper.browser_manager:
+        print("[SHUTDOWN] Closing browser...", flush=True)
+        _scraper.browser_manager.close()
 
 @router.get("/proxy")
 async def proxy_download(url: str, filename: str = None):
@@ -119,10 +92,8 @@ async def proxy_download(url: str, filename: str = None):
                         yield chunk
             except Exception as e:
                 print(f"Proxy error: {e}")
-                # We can't really return an error HTTP response once streaming starts
                 pass
 
-    # Determine filename
     if not filename:
         filename = url.split('/')[-1]
 
