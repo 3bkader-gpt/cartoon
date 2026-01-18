@@ -247,9 +247,25 @@ This project is for educational purposes only.
 
 ---
 
-## 📞 Support
+## 📞 Support & Troubleshooting
 
-For issues or questions:
+### Troubleshooting
+
+#### Backend won't start?
+- Make sure you're in the `backend` directory when running `python main.py`
+- Check that all dependencies are installed: `pip install -r backend/requirements.txt`
+- Verify Playwright is installed: `playwright install chromium`
+
+#### Frontend won't start?
+- Make sure you're in the `frontend` directory
+- Install dependencies: `npm install`
+- Try: `npm run dev`
+
+#### Port already in use?
+- Backend (8000): Check if another process is using port 8000
+- Frontend (5173): Check if another Vite server is running
+
+### Support
 1. Check `docs/MANUAL_TESTING_GUIDE.md`
 2. Review console errors
 3. Verify backend is running
