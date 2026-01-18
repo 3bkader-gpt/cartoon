@@ -6,6 +6,7 @@ __pycache__/
 .Python
 env/
 venv/
+.venv/
 ENV/
 build/
 develop-eggs/
@@ -69,9 +70,23 @@ coverage/
 # Debug files
 debug_*.html
 debug_*.png
-test_*.txt
+debug_*.py
 
 # Temporary files
+temp/
 temp_repo/
-CLEANUP_PLAN.md
 
+# Test artifacts
+test_*.py
+test_*.txt
+*_result*.json
+*_results*.json
+
+# SQLite databases
+*.sqlite
+*.db
+backend/data/
+
+# Cleanup artifacts
+CLEANUP_PLAN.md
+backend_debug.log
