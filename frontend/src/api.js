@@ -34,13 +34,9 @@ export const getSeason = async (url) => {
 
 export const streamSeason = async (url, onEvent) => {
     const fullUrl = `${API_URL}/season/stream?url=${encodeURIComponent(url)}`;
-    console.log("=== streamSeason called ===");
-    console.log("Input URL:", url);
-    console.log("Full API URL:", fullUrl);
 
     try {
         const response = await fetch(fullUrl);
-        console.log("Response status:", response.status);
 
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
@@ -50,12 +46,10 @@ export const streamSeason = async (url, onEvent) => {
         const decoder = new TextDecoder();
         let buffer = '';
 
-        console.log("Stream reader created, starting loop...");
 
         while (true) {
             const { done, value } = await reader.read();
             if (done) {
-                console.log("Stream finished");
                 break;
             }
 
@@ -69,7 +63,6 @@ export const streamSeason = async (url, onEvent) => {
                 if (line.trim()) {
                     try {
                         const event = JSON.parse(line);
-                        console.log("Received event:", event.type);
                         onEvent(event);
                     } catch (e) {
                         console.error("Error parsing JSON line:", e, "Line:", line);

@@ -247,7 +247,7 @@ class ArabicToonsAPI:
             }
         }
     
-    def get_series_episodes(self, series_url: str) -> List[Dict]:
+    def get_series_episodes(self, series_url: str) -> tuple[List[Dict], str]:
         """
         جلب قائمة الحلقات من صفحة المسلسل
         
@@ -255,7 +255,7 @@ class ArabicToonsAPI:
             series_url: URL صفحة المسلسل
             
         Returns:
-            List of dictionaries تحتوي على معلومات الحلقات
+            Tuple containing (List of episodes, Series Title)
         """
         page = self.context.new_page()
         episodes = []
@@ -286,7 +286,16 @@ class ArabicToonsAPI:
                 except:
                     continue
             
-            return episodes
+            # Extract series title from H1
+            series_title = "Unknown Series"
+            try:
+                h1 = page.query_selector('h1')
+                if h1:
+                    series_title = h1.inner_text().strip()
+            except:
+                pass
+
+            return episodes, series_title
             
         except Exception as e:
             print(f"Error getting series episodes: {e}")
@@ -329,8 +338,8 @@ class ArabicToonsAPI:
         logger.info(f"Starting download_season_generator for: {series_url}")
         
         try:
-            episodes = self.get_series_episodes(series_url)
-            logger.info(f"Found {len(episodes)} episodes initially")
+            episodes, series_title = self.get_series_episodes(series_url)
+            logger.info(f"Found {len(episodes)} episodes initially for '{series_title}'")
         except Exception as e:
             logger.error(f"Error fetching series episodes: {e}")
             yield {"type": "error", "episode": "Series", "message": f"Failed to fetch episodes: {str(e)}"}
@@ -342,7 +351,8 @@ class ArabicToonsAPI:
             logger.info(f"Filtered to {len(episodes)} episodes for season {season_number}")
         
         total = len(episodes)
-        yield {"type": "start", "total": total}
+        total = len(episodes)
+        yield {"type": "start", "total": total, "series_title": series_title}
         
         for i, episode in enumerate(episodes, 1):
             episode_url = episode.get("episode_url")

@@ -102,21 +102,58 @@ class CacheManager {
             const seasonsStore = transaction.objectStore(SEASONS_STORE);
             seasonsStore.put(seasonData);
 
-            // Save episodes
+            // Save episodes (Clear existing first)
             const episodesStore = transaction.objectStore(EPISODES_STORE);
-            episodes.forEach((episode, index) => {
-                const episodeData = {
-                    season_url: seasonUrl,
-                    episode_number: index,
-                    episode_title: episode.title,
-                    video_url: episode.video_url,
-                    video_info: episode.video_info,
-                    metadata: episode.metadata,
-                    thumbnail: episode.thumbnail,
-                    episode_url: episode.episode_url
-                };
-                episodesStore.put(episodeData);
-            });
+            const index = episodesStore.index('season_url');
+
+            // Delete existing episodes for this season
+            const request = index.openCursor(IDBKeyRange.only(seasonUrl));
+            request.onsuccess = (event) => {
+                const cursor = event.target.result;
+                if (cursor) {
+                    cursor.delete();
+                    cursor.continue();
+                }
+            };
+
+            // Wait for deletion cursor to finish? No, this is all one transaction.
+            // IDB transactions are committed when the event loop is free of requests.
+            // However, cursor iteration is async within the transaction.
+            // To be safe, we should add new items ONLY AFTER ensuring deletion logic is queued.
+            // But since cursor.continue() is async, we can't easily wait in this linear block.
+            // A better approach is to use a separate delete first, OR trust the transaction scope.
+
+            // Actually, querying the index and deleting via cursor is standard.
+            // But we need to ensure we don't add the new ones until we're sure we've queued deletions? 
+            // In IDB, operations in the same transaction are ordered.
+            // BUT cursor iteration happens over time.
+
+            // SIMPLER APPROACH for `saveSeason`:
+            // Delete effectively by index range? No, `delete(key)` on store needs primary key.
+            // `index.getAllKeys(seasonUrl)` then `store.delete(key)` is better.
+
+            const keyRequest = index.getAllKeys(seasonUrl);
+            keyRequest.onsuccess = () => {
+                const keys = keyRequest.result;
+                keys.forEach(key => {
+                    episodesStore.delete(key);
+                });
+
+                // NOW add new ones
+                episodes.forEach((episode, index) => {
+                    const episodeData = {
+                        season_url: seasonUrl,
+                        episode_number: index,
+                        episode_title: episode.title,
+                        video_url: episode.video_url,
+                        video_info: episode.video_info,
+                        metadata: episode.metadata,
+                        thumbnail: episode.thumbnail,
+                        episode_url: episode.episode_url
+                    };
+                    episodesStore.put(episodeData);
+                });
+            };
 
             transaction.oncomplete = () => resolve(true);
             transaction.onerror = () => reject(transaction.error);

@@ -17,24 +17,34 @@ if platform.system() == "Windows":
     print("🪟 Setting Windows event loop policy for Playwright support...", flush=True)
     asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
 
+from datetime import datetime
+
+# Initialize Database
+import backend.database as db
+db.init_db()
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from backend.api.main_router import router as api_router
+from backend.api.library_router import router as library_router
 import uvicorn
 import logging
 import sys
 
 # Configure logging
 logging.basicConfig(
-    level=logging.DEBUG,  # Changed to DEBUG
+    level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[logging.StreamHandler(sys.stdout)]
+    handlers=[
+        logging.StreamHandler(sys.stdout),
+        logging.FileHandler('backend.log', encoding='utf-8')
+    ]
 )
+logger = logging.getLogger(__name__)
 
-print("📦 Creating FastAPI app...", flush=True)
-app = FastAPI()
+app = FastAPI(title="Arabic Toons Downloader API")
 
-# CORS
+# Configure CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -43,12 +53,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Include Router
-print("🔗 Including API router...", flush=True)
+# Include Routers
 app.include_router(api_router, prefix="/api")
+app.include_router(library_router)
 
 @app.get("/")
-def read_root():
+async def root():
     print("📍 Root endpoint called", flush=True)
     return {"status": "ok", "message": "Cartoon Downloader API v2 (Modular)"}
 

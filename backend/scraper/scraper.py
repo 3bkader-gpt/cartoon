@@ -55,29 +55,31 @@ class ArabicToonsScraper:
         finally:
             page.close()
 
-    def get_series_episodes(self, series_url: str) -> List[Dict]:
+    def get_series_episodes(self, series_url: str) -> Dict:
         log(f"🔍 get_series_episodes called with URL: {series_url}")
         context = self.browser_manager.get_context()
         page = context.new_page()
         episodes = []
+        series_title = "Unknown Series"
         try:
             log(f"📄 Navigating to: {series_url}")
             page.goto(series_url, wait_until="domcontentloaded", timeout=30000)
             page.wait_for_timeout(2000)
             
+            # Extract series title from page metadata
+            meta = self.parser.get_page_metadata(page)
+            if meta.get("h1"):
+                series_title = meta["h1"].strip()
+            elif meta.get("title"):
+                # Clean up title: "Highlander Episode 2 - Arabic Toons" -> "Highlander"
+                series_title = meta["title"].split(' - ')[0].split(' الحلقة ')[0].strip()
+            
+            log(f"🏷️ Detected Series Title: {series_title}")
+
             log(f"🔎 Looking for links with selector: {SELECTORS['series_link']}")
             links = page.locator(SELECTORS["series_link"])
             count = links.count()
             log(f"📊 Found {count} links on page")
-            
-            # Log first few link hrefs for debugging
-            for i in range(min(10, count)):
-                try:
-                    href = links.nth(i).get_attribute("href")
-                    text = links.nth(i).inner_text()
-                    log(f"   Link {i}: href={href[:80] if href else 'None'}... text={text[:30] if text else 'N/A'}")
-                except Exception as e:
-                    log(f"   Link {i}: ERROR - {e}")
             
             for i in range(min(count, 100)):
                 try:
@@ -85,16 +87,13 @@ class ArabicToonsScraper:
                     href = link.get_attribute("href")
                     text = link.inner_text()
                     
-                    # Episode links don't have "anime-streaming" but have .html
                     if href and "anime-streaming" not in href and ".html" in href:
                         clean_href = href.split('#')[0]
                         full_url = clean_href if clean_href.startswith('http') else f"{BASE_URL}/{clean_href.lstrip('/')}"
                         
-                        # Clean up title: remove duplicate numbers (e.g., "الحلقة 1\n1" -> "الحلقة 1")
                         clean_title = text.strip()
                         lines = [line.strip() for line in clean_title.split('\n') if line.strip()]
                         if len(lines) > 1 and lines[-1].isdigit():
-                            # Last line is just a number, likely duplicate
                             clean_title = ' '.join(lines[:-1])
                         else:
                             clean_title = ' '.join(lines)
@@ -108,11 +107,11 @@ class ArabicToonsScraper:
                     continue
             
             log(f"📋 Total episodes found: {len(episodes)}")
-            return episodes
+            return {"episodes": episodes, "series_title": series_title}
         except Exception as e:
             log(f"❌ Error getting episodes: {e}")
             log(traceback.format_exc())
-            return []
+            return {"episodes": [], "series_title": "Error Loading"}
         finally:
             page.close()
 
@@ -135,15 +134,17 @@ class ArabicToonsScraper:
         log(f"🎬 download_season_generator called with URL: {series_url}")
         try:
             log("📥 Calling get_series_episodes...")
-            episodes = self.get_series_episodes(series_url)
-            log(f"📊 Got {len(episodes)} episodes")
+            result = self.get_series_episodes(series_url)
+            episodes = result["episodes"]
+            series_title = result["series_title"]
+            log(f"📊 Got {len(episodes)} episodes for series: {series_title}")
             
             if season_number:
                 episodes = [ep for ep in episodes if f"s{season_number}" in ep.get("episode_url", "")]
             
             total = len(episodes)
             log(f"📋 Total episodes to process: {total}")
-            yield {"type": "start", "total": total}
+            yield {"type": "start", "total": total, "series_title": series_title}
             
             for i, ep in enumerate(episodes, 1):
                 title = ep.get('title', 'Unknown')

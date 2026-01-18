@@ -1,8 +1,8 @@
 # 📊 Project Status Report - Arabic Toons Downloader
 
 **Date**: 2026-01-18
-**Version**: v3.0-specialized
-**Status**: 🚀 Stable
+**Version**: v3.1-polished
+**Status**: 🚀 Stable (Hotfix Applied)
 
 ---
 
@@ -28,15 +28,17 @@ The project has been specialized to focus exclusively on **Arabic Toons**.
 ---
 
 ## 🐛 Known Issues
-- **None**. The specialized codebase is stable.
+- **None**. The specialized codebase is stable (Stable v3.1.1 Hotfix applied).
 
 ---
 
 ## 🚀 Roadmap (Future)
 
-- [ ] **Download Manager**: Native download queue within the app.
-- [ ] **Auto-Zip**: Option to zip full seasons after download.
-- [ ] **Headless Toggle**: Option to run browser in headful mode for debugging.
+- [ ] **Download Manager (v4.0)**: Native download queue within the app.
+- [ ] **Embedded Player (v4.0)**: Direct video playback.
+- [x] **My Library (v3.1)**: Favorites system with SQLite.
+- [x] **Plex Naming (v3.1)**: Standardized file exports.
+- [x] **Stability Fixes (v3.1.1)**: Error Boundaries and render safety.
 
 ---
 

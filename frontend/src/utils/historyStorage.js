@@ -85,11 +85,23 @@ export const historyStorage = {
     // Get stats
     getStats() {
         const history = this.getHistory();
+        const totalSizeBytes = history.reduce((sum, item) => sum + (item.totalSizeBytes || 0), 0);
+
+        const formatSize = (bytes) => {
+            if (bytes === 0) return '0 B';
+            if (bytes >= 1024 * 1024 * 1024) {
+                return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`;
+            } else if (bytes >= 1024 * 1024) {
+                return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
+            } else {
+                return `${(bytes / 1024).toFixed(2)} KB`;
+            }
+        };
 
         return {
-            totalDownloads: history.length,
+            count: history.length,
             totalEpisodes: history.reduce((sum, item) => sum + (item.selectedCount || 0), 0),
-            totalSize: history.reduce((sum, item) => sum + (item.totalSizeBytes || 0), 0),
+            totalSize: formatSize(totalSizeBytes),
             lastUsed: history.length > 0 ? new Date(history[0].timestamp) : null,
         };
     },

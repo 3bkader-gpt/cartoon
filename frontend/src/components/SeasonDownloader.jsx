@@ -4,6 +4,7 @@ import { streamSeason } from '../api';
 import { historyStorage } from '../utils/historyStorage';
 import { fadeIn, slideUp, staggerContainer, cardAnimation } from '../utils/animations';
 import cacheManager from '../utils/cache';
+import axios from 'axios';
 
 const SeasonDownloader = forwardRef((props, ref) => {
     const [url, setUrl] = useState('');
@@ -11,6 +12,7 @@ const SeasonDownloader = forwardRef((props, ref) => {
     const [error, setError] = useState(null);
     const [episodes, setEpisodes] = useState([]);
     const [progress, setProgress] = useState(null);
+    const [seriesTitle, setSeriesTitle] = useState('');
     const [copied, setCopied] = useState(null);
     const [selectedEpisodes, setSelectedEpisodes] = useState(new Set());
     const [isCached, setIsCached] = useState(false);
@@ -21,9 +23,74 @@ const SeasonDownloader = forwardRef((props, ref) => {
     const [sortOrder, setSortOrder] = useState('asc');
     const [searchQuery, setSearchQuery] = useState('');
 
+    // Favorites State
+    const [isFavorited, setIsFavorited] = useState(false);
+    const [favoriteId, setFavoriteId] = useState(null);
+
+    // Check favorite status when series title changes
     useEffect(() => {
+        if (!seriesTitle || seriesTitle === 'Unknown Series') return;
+        checkFavoriteStatus();
+    }, [seriesTitle]);
+
+    const checkFavoriteStatus = async () => {
+        if (!seriesTitle) return;
+        try {
+            const response = await axios.get('http://127.0.0.1:8000/api/library/');
+            const found = response.data.find(f => f.url === url);
+            if (found) {
+                setIsFavorited(true);
+                setFavoriteId(found.id);
+            } else {
+                setIsFavorited(false);
+                setFavoriteId(null);
+            }
+        } catch (err) {
+            console.error('Error checking favorite:', err);
+        }
+    };
+
+    const toggleFavorite = async () => {
+        // Safety check: ensure we have metadata before trying to save
+        if (!seriesTitle || !seasonMetadata) {
+            console.warn("Cannot toggle favorite: Missing metadata");
+            return;
+        }
+
+        try {
+            if (isFavorited) {
+                await axios.delete('http://127.0.0.1:8000/api/library/', { params: { url } });
+                setIsFavorited(false);
+                setFavoriteId(null);
+            } else {
+                const response = await axios.post('http://127.0.0.1:8000/api/library/', {
+                    title: seriesTitle,
+                    url: url,
+                    thumbnail: seasonMetadata.poster
+                });
+                setIsFavorited(true);
+                setFavoriteId(response.data.id);
+            }
+        } catch (err) {
+            console.error('Error toggling favorite:', err);
+            alert('Failed to update library');
+        }
+    };
+
+    useEffect(() => {
+        // Check for URL in query params (e.g., from Library)
+        const params = new URLSearchParams(window.location.search);
+        const queryUrl = params.get('url');
+
+        // Check for URL in localStorage (legacy)
         const savedUrl = localStorage.getItem('temp_season_url');
-        if (savedUrl) {
+
+        if (queryUrl) {
+            setUrl(queryUrl);
+            // Directly call handleFetch with the new URL
+            // Pass the URL explicitly to avoid state timing issues
+            handleFetch(false, queryUrl);
+        } else if (savedUrl) {
             setUrl(savedUrl);
             localStorage.removeItem('temp_season_url');
         }
@@ -72,12 +139,14 @@ const SeasonDownloader = forwardRef((props, ref) => {
     const seasonMetadata = useMemo(() => {
         if (episodes.length === 0) return null;
 
-        // Extract series name from first episode
+        // Extract series name from first episode or use state from backend
         const firstTitle = episodes[0]?.title || '';
-        const seriesName = firstTitle
+        const derivedSeriesName = firstTitle
             .replace(/\s*-?\s*(الحلقة|Episode|E|الموسم|Season|S)\s*\d+.*$/i, '')
             .replace(/\s*-?\s*\d+.*$/i, '')
-            .trim() || 'Unknown Series';
+            .trim();
+
+        const seriesName = seriesTitle || derivedSeriesName || 'Unknown Series';
 
         // Calculate total size
         const totalSizeBytes = episodes.reduce((sum, ep) => sum + (ep.metadata?.size_bytes || 0), 0);
@@ -122,17 +191,11 @@ const SeasonDownloader = forwardRef((props, ref) => {
         }
     }));
 
-    const handleFetch = async (forceRefresh = false) => {
-        console.log('=== handleFetch CALLED ===');
-        console.log('URL:', url);
-        console.log('forceRefresh:', forceRefresh);
+    const handleFetch = async (forceRefresh = false, overrideUrl = null) => {
+        // Use override URL if provided, otherwise using existing state URL
+        const urlToUse = overrideUrl || url;
+        if (!urlToUse) return;
 
-        if (!url) {
-            console.log('URL is empty, returning early');
-            return;
-        }
-
-        console.log('Setting loading state...');
         setLoading(true);
         setError(null);
         setEpisodes([]);
@@ -143,32 +206,36 @@ const SeasonDownloader = forwardRef((props, ref) => {
         try {
             // Check cache first (unless force refresh)
             if (!forceRefresh) {
-                console.log('Checking cache...');
-                const cachedData = await cacheManager.getFullSeason(url);
-                console.log('Cache result:', cachedData);
+                const cachedData = await cacheManager.getFullSeason(urlToUse);
                 if (cachedData && cachedData.episodes.length > 0) {
-                    console.log('Found in cache! Loading from cache...');
-                    // Load from cache instantly
-                    setEpisodes(cachedData.episodes);
-                    setIsCached(true);
-                    setLoading(false);
+                    // Check if cached metadata has valid title
+                    if (cachedData.metadata?.seriesName === "Unknown Series") {
+                        console.log("Cached Series Title is 'Unknown', forcing refresh...");
+                        // Do NOT return here, let it fall through to backend fetch
+                    } else {
+                        // Load from cache instantly
+                        setEpisodes(cachedData.episodes);
+                        setSeriesTitle(cachedData.metadata?.seriesName || '');
+                        setIsCached(true);
+                        setLoading(false);
 
-                    // Show toast
-                    setShowToast(true);
-                    setTimeout(() => setShowToast(false), 3000);
+                        // Show toast
+                        setShowToast(true);
+                        setTimeout(() => setShowToast(false), 3000);
 
-                    return;
+                        return;
+                    }
                 }
-                console.log('Not in cache, proceeding to fetch from backend...');
             }
 
             // Fetch from backend
-            console.log('Calling streamSeason...');
             const fetchedEpisodes = [];
-            await streamSeason(url, (data) => {
-                console.log('Received data from stream:', data);
+            await streamSeason(urlToUse, (data) => {
                 if (data.type === 'start') {
                     setProgress({ current: 0, total: data.total, title: 'Starting...' });
+                    if (data.series_title) {
+                        setSeriesTitle(data.series_title);
+                    }
                 } else if (data.type === 'progress') {
                     setProgress({
                         current: data.current,
@@ -187,10 +254,11 @@ const SeasonDownloader = forwardRef((props, ref) => {
             if (fetchedEpisodes.length > 0) {
                 // Calculate metadata for cache
                 const firstTitle = fetchedEpisodes[0]?.title || '';
-                const seriesName = firstTitle
+                const derivedSeriesName = firstTitle
                     .replace(/\s*-?\s*(الحلقة|Episode|E|الموسم|Season|S)\s*\d+.*$/i, '')
                     .replace(/\s*-?\s*\d+.*$/i, '')
-                    .trim() || 'Unknown Series';
+                    .trim();
+                const seriesName = seriesTitle || derivedSeriesName || 'Unknown Series';
 
                 const totalSizeBytes = fetchedEpisodes.reduce((sum, ep) => sum + (ep.metadata?.size_bytes || 0), 0);
                 const formatSize = (bytes) => {
@@ -272,38 +340,76 @@ const SeasonDownloader = forwardRef((props, ref) => {
         setTimeout(() => setCopied(null), 2000);
     };
 
-    const downloadAll = () => {
-        const selected = getSelectedEpisodes();
-        if (selected.length === 0) return;
-
-        const text = selected.map(ep => ep.video_url).join('\n');
-        const blob = new Blob([text], { type: 'text/plain' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'episodes_list.txt';
-        a.click();
-        URL.revokeObjectURL(url);
+    const getFilename = (ep, index) => {
+        const isPlexNaming = localStorage.getItem('plex_naming') === 'true';
+        if (isPlexNaming && seasonMetadata?.seriesName) {
+            // Pattern: Series Name - S01E01 - Title.mp4
+            const epNum = (index + 1).toString().padStart(2, '0');
+            // Assuming S01 for now as we don't strictly track season number per episode yet without parsing
+            // But we can try to extract or default to S01
+            const safeSeries = seasonMetadata.seriesName.replace(/[\\/:*?"<>|]/g, '');
+            const safeTitle = ep.title.replace(/[\\/:*?"<>|]/g, '');
+            return `${safeSeries} - S01E${epNum} - ${safeTitle}.mp4`;
+        }
+        return ep.filename || `episode_${index + 1}.mp4`;
     };
 
-    const downloadIDM = () => {
-        const selected = getSelectedEpisodes();
-        if (selected.length === 0) return;
+    const handleSaveList = () => {
+        const episodesToExport = filteredAndSortedEpisodes.filter((_, idx) =>
+            selectedEpisodes.size === 0 || selectedEpisodes.has(idx)
+        );
 
-        let content = '';
-        selected.forEach((ep) => {
-            if (ep.video_url) {
-                const index = episodes.indexOf(ep);
-                content += `<\r\n${ep.video_url}\r\nfilename=${ep.video_info?.filename || `episode_${index + 1}.mp4`}\r\n>\r\n`;
-            }
-        });
+        if (episodesToExport.length === 0) {
+            alert('No episodes selected');
+            return;
+        }
+
+        const content = episodesToExport
+            .map((ep, index) => {
+                const originalIndex = filteredAndSortedEpisodes.indexOf(ep); // Get original index for filename generation
+                const filename = getFilename(ep, originalIndex);
+                return `${ep.video_url} | ${filename}`;
+            })
+            .join('\n');
 
         const blob = new Blob([content], { type: 'text/plain' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = 'season_export.ef2';
+        a.download = 'episodes_list.txt';
+        document.body.appendChild(a);
         a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    };
+
+    const handleExportIDM = () => {
+        const episodesToExport = filteredAndSortedEpisodes.filter((_, idx) =>
+            selectedEpisodes.size === 0 || selectedEpisodes.has(idx)
+        );
+
+        if (episodesToExport.length === 0) {
+            alert('No episodes selected');
+            return;
+        }
+
+        let ef2Content = '';
+        episodesToExport.forEach((ep) => {
+            if (ep.video_url) {
+                const originalIndex = filteredAndSortedEpisodes.indexOf(ep); // Get original index for filename generation
+                const filename = getFilename(ep, originalIndex);
+                ef2Content += `<\r\n${ep.video_url}\r\nfilename=${filename}\r\n>\r\n`;
+            }
+        });
+
+        const blob = new Blob([ef2Content], { type: 'text/plain' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'exported_list.ef2';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
         URL.revokeObjectURL(url);
     };
 
@@ -439,9 +545,30 @@ const SeasonDownloader = forwardRef((props, ref) => {
 
                                     {/* Info */}
                                     <div className="flex-1 min-w-0">
-                                        <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4 truncate">
-                                            {seasonMetadata.seriesName}
-                                        </h2>
+                                        <div className="flex items-center justify-between mb-4">
+                                            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white truncate">
+                                                {seasonMetadata.seriesName}
+                                            </h2>
+                                            {/* Favorite Button */}
+                                            <button
+                                                onClick={toggleFavorite}
+                                                className={`p-3 rounded-full transition-all ${isFavorited
+                                                    ? 'bg-pink-50 text-pink-500 hover:bg-pink-100'
+                                                    : 'bg-gray-100 dark:bg-gray-700 text-gray-400 hover:text-pink-500 hover:bg-pink-50 dark:hover:bg-gray-600'
+                                                    }`}
+                                                title={isFavorited ? "Remove from Library" : "Add to Library"}
+                                            >
+                                                <svg
+                                                    xmlns="http://www.w3.org/2000/svg"
+                                                    className={`h-6 w-6 ${isFavorited ? 'fill-current' : 'fill-none'}`}
+                                                    viewBox="0 0 24 24"
+                                                    stroke="currentColor"
+                                                    strokeWidth={2}
+                                                >
+                                                    <path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                                                </svg>
+                                            </button>
+                                        </div>
 
                                         {/* Stats Grid */}
                                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
@@ -477,7 +604,7 @@ const SeasonDownloader = forwardRef((props, ref) => {
                                         {/* Action Buttons */}
                                         <div className="flex flex-wrap gap-3">
                                             <button
-                                                onClick={downloadAll}
+                                                onClick={handleSaveList}
                                                 disabled={selectedEpisodes.size === 0}
                                                 className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold shadow-lg shadow-blue-600/30 disabled:opacity-50 disabled:cursor-not-allowed transition-all transform hover:scale-105 active:scale-95 flex items-center gap-2"
                                             >
@@ -488,7 +615,7 @@ const SeasonDownloader = forwardRef((props, ref) => {
                                             </button>
 
                                             <button
-                                                onClick={downloadIDM}
+                                                onClick={handleExportIDM}
                                                 disabled={selectedEpisodes.size === 0}
                                                 className="px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-xl font-semibold shadow-lg shadow-green-600/30 disabled:opacity-50 disabled:cursor-not-allowed transition-all transform hover:scale-105 active:scale-95 flex items-center gap-2"
                                             >
@@ -563,8 +690,7 @@ const SeasonDownloader = forwardRef((props, ref) => {
                         <AnimatePresence mode='popLayout'>
                             {filteredAndSortedEpisodes.map((ep, idx) => (
                                 <motion.div
-                                    key={ep.video_url || idx}
-                                    layout
+                                    key={idx}
                                     variants={cardAnimation}
                                     initial="hidden"
                                     animate="visible"
@@ -590,13 +716,14 @@ const SeasonDownloader = forwardRef((props, ref) => {
 
                                     {/* Thumbnail */}
                                     <div className="relative aspect-video w-full overflow-hidden bg-gradient-to-br from-blue-100 to-purple-100 dark:from-blue-900/30 dark:to-purple-900/30">
-                                        {ep.thumbnail ? (
+                                        {ep?.thumbnail ? (
                                             <motion.img
                                                 src={ep.thumbnail}
-                                                alt={ep.title}
+                                                alt={ep.title || 'Episode'}
                                                 className="w-full h-full object-cover"
                                                 whileHover={{ scale: 1.1 }}
                                                 transition={{ duration: 0.3 }}
+                                                onError={(e) => e.target.style.display = 'none'}
                                             />
                                         ) : (
                                             <div className="w-full h-full flex items-center justify-center">
@@ -613,8 +740,8 @@ const SeasonDownloader = forwardRef((props, ref) => {
                                     {/* Card Content */}
                                     <div className="p-4 space-y-3">
                                         {/* Title */}
-                                        <h4 className="font-bold text-gray-900 dark:text-white text-sm line-clamp-2 min-h-[2.5rem]" title={ep.title}>
-                                            {ep.title}
+                                        <h4 className="font-bold text-gray-900 dark:text-white text-sm line-clamp-2 min-h-[2.5rem]" title={ep?.title}>
+                                            {ep?.title || 'Unknown Title'}
                                         </h4>
 
                                         {/* Metadata */}
@@ -624,11 +751,11 @@ const SeasonDownloader = forwardRef((props, ref) => {
                                                 <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
                                                 </svg>
-                                                <span className="truncate font-mono">{ep.video_info?.filename || 'video.mp4'}</span>
+                                                <span className="truncate font-mono">{ep?.video_info?.filename || 'video.mp4'}</span>
                                             </div>
 
                                             {/* File Size */}
-                                            {ep.metadata?.size_formatted && (
+                                            {ep?.metadata?.size_formatted && (
                                                 <div className="flex items-center gap-2 text-xs">
                                                     <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-purple-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4" />
@@ -645,7 +772,7 @@ const SeasonDownloader = forwardRef((props, ref) => {
                                             {/* Primary Actions */}
                                             <div className="flex gap-2">
                                                 <button
-                                                    onClick={() => copyToClipboard(ep.video_url, idx)}
+                                                    onClick={() => copyToClipboard(ep?.video_url, idx)}
                                                     className="flex-1 px-3 py-2 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/50 rounded-lg text-xs font-medium transition-colors flex items-center justify-center gap-1"
                                                     title="Copy Default URL"
                                                 >
