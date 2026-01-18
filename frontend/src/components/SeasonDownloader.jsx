@@ -123,8 +123,16 @@ const SeasonDownloader = forwardRef((props, ref) => {
     }));
 
     const handleFetch = async (forceRefresh = false) => {
-        if (!url) return;
+        console.log('=== handleFetch CALLED ===');
+        console.log('URL:', url);
+        console.log('forceRefresh:', forceRefresh);
 
+        if (!url) {
+            console.log('URL is empty, returning early');
+            return;
+        }
+
+        console.log('Setting loading state...');
         setLoading(true);
         setError(null);
         setEpisodes([]);
@@ -135,8 +143,11 @@ const SeasonDownloader = forwardRef((props, ref) => {
         try {
             // Check cache first (unless force refresh)
             if (!forceRefresh) {
+                console.log('Checking cache...');
                 const cachedData = await cacheManager.getFullSeason(url);
+                console.log('Cache result:', cachedData);
                 if (cachedData && cachedData.episodes.length > 0) {
+                    console.log('Found in cache! Loading from cache...');
                     // Load from cache instantly
                     setEpisodes(cachedData.episodes);
                     setIsCached(true);
@@ -148,11 +159,14 @@ const SeasonDownloader = forwardRef((props, ref) => {
 
                     return;
                 }
+                console.log('Not in cache, proceeding to fetch from backend...');
             }
 
             // Fetch from backend
+            console.log('Calling streamSeason...');
             const fetchedEpisodes = [];
             await streamSeason(url, (data) => {
+                console.log('Received data from stream:', data);
                 if (data.type === 'start') {
                     setProgress({ current: 0, total: data.total, title: 'Starting...' });
                 } else if (data.type === 'progress') {
@@ -627,42 +641,86 @@ const SeasonDownloader = forwardRef((props, ref) => {
                                         </div>
 
                                         {/* Action Buttons */}
-                                        <div className="flex gap-2 pt-2">
-                                            <button
-                                                onClick={() => copyToClipboard(ep.video_url, idx)}
-                                                className="flex-1 px-3 py-2 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/50 rounded-lg text-xs font-medium transition-colors flex items-center justify-center gap-1"
-                                                title="Copy URL"
-                                            >
-                                                {copied === idx ? (
-                                                    <>
-                                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                                                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                                                        </svg>
-                                                        Copied
-                                                    </>
-                                                ) : (
-                                                    <>
-                                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                                                        </svg>
-                                                        Copy
-                                                    </>
-                                                )}
-                                            </button>
+                                        <div className="flex flex-col gap-2 pt-2">
+                                            {/* Primary Actions */}
+                                            <div className="flex gap-2">
+                                                <button
+                                                    onClick={() => copyToClipboard(ep.video_url, idx)}
+                                                    className="flex-1 px-3 py-2 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/50 rounded-lg text-xs font-medium transition-colors flex items-center justify-center gap-1"
+                                                    title="Copy Default URL"
+                                                >
+                                                    {copied === idx ? (
+                                                        <>
+                                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                                                                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                                            </svg>
+                                                            Copied
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                                                            </svg>
+                                                            Copy
+                                                        </>
+                                                    )}
+                                                </button>
 
-                                            <a
-                                                href={`http://127.0.0.1:8000/api/proxy?url=${encodeURIComponent(ep.video_url)}&filename=${encodeURIComponent(ep.video_info?.filename || 'episode.mp4')}`}
-                                                download
-                                                className="flex-1 px-3 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-xs font-medium transition-colors flex items-center justify-center gap-1 shadow-lg shadow-green-600/20"
-                                                title="Download"
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                            >
-                                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                                                </svg>
-                                                Download
-                                            </a>
+                                                <a
+                                                    href={`http://127.0.0.1:8000/api/proxy?url=${encodeURIComponent(ep.video_url)}&filename=${encodeURIComponent(ep.video_info?.filename || 'episode.mp4')}`}
+                                                    download
+                                                    className="flex-1 px-3 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-xs font-medium transition-colors flex items-center justify-center gap-1 shadow-lg shadow-green-600/20"
+                                                    title="Download Default"
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                >
+                                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                                                    </svg>
+                                                    Download
+                                                </a>
+                                            </div>
+
+                                            {/* Qualities Dropdown / List */}
+                                            {ep.sources && ep.sources.length > 1 && (
+                                                <div className="relative group/qualities z-20">
+                                                    <button className="w-full px-3 py-2 bg-purple-50 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 hover:bg-purple-100 dark:hover:bg-purple-900/50 rounded-lg text-xs font-medium transition-colors flex items-center justify-center gap-1">
+                                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+                                                        </svg>
+                                                        {ep.sources.length} Qualities Available
+                                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                                        </svg>
+                                                    </button>
+
+                                                    {/* Dropdown Menu */}
+                                                    <div className="absolute bottom-full left-0 w-full mb-1 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 overflow-hidden hidden group-hover/qualities:block">
+                                                        <div className="max-h-48 overflow-y-auto custom-scrollbar">
+                                                            {ep.sources.map((source, sIdx) => (
+                                                                <a
+                                                                    key={sIdx}
+                                                                    href={`http://127.0.0.1:8000/api/proxy?url=${encodeURIComponent(source.url)}&filename=${encodeURIComponent(ep.video_info?.filename?.replace('.mp4', `_${source.quality}.mp4`) || 'episode.mp4')}`}
+                                                                    target="_blank"
+                                                                    rel="noopener noreferrer"
+                                                                    className="flex items-center justify-between px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-700 text-xs text-gray-700 dark:text-gray-200 border-b border-gray-100 dark:border-gray-700 last:border-0"
+                                                                >
+                                                                    <div className="flex flex-col">
+                                                                        <span className="font-bold">{source.quality}</span>
+                                                                        <span className="text-[10px] text-gray-400">{source.server}</span>
+                                                                    </div>
+                                                                    <div className="flex items-center gap-1">
+                                                                        {source.metadata?.size && <span className="text-[10px] bg-gray-100 dark:bg-gray-600 px-1 rounded">{source.metadata.size}</span>}
+                                                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                                                                        </svg>
+                                                                    </div>
+                                                                </a>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
                                 </motion.div>

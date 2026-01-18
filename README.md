@@ -1,12 +1,15 @@
-# 🎬 Arabic Toons Downloader
+# 🎬 Cartoon Downloader
 
-**Version**: v2.1-simplified  
-**Status**: ✅ Production Ready  
-**Last Updated**: 2025-11-24
+**Version**: v2.2-multi-site  
+**Status**: 🚧 In Development  
+**Last Updated**: 2025-11-25
 
-A modern, feature-rich web application for downloading episodes from Arabic Toons with advanced selection, sorting, and export capabilities.
+A modern, modular web application for downloading episodes from multiple Arabic cartoon streaming sites with advanced selection, sorting, and export capabilities.
 
-> **Note**: The 8-color theme system has been removed in favor of simplicity and performance. Dark/Light mode is still available.
+## 🌐 Supported Sites
+
+- ✅ **Arabic Toons** - Fully working
+- 🚧 **EgyDead** - In development
 
 ---
 
@@ -49,41 +52,53 @@ A modern, feature-rich web application for downloading episodes from Arabic Toon
 ## 📁 Project Structure
 
 ```
-arabic-toons-downloader/
+cartoon/
 ├── backend/
+│   ├── main.py                     # FastAPI server entry point
 │   ├── api/
-│   │   ├── __init__.py
-│   │   └── arabic_toons_api.py    # Playwright scraper
-│   ├── main.py                     # FastAPI server
-│   └── requirements.txt
+│   │   └── main_router.py          # API routes (streaming endpoint)
+│   ├── core/
+│   │   ├── browser.py              # Playwright browser manager
+│   │   └── selector.py             # Auto-selects scraper by URL
+│   └── sites/
+│       ├── arabic_toons/
+│       │   ├── config.py           # Site configuration
+│       │   ├── parser.py           # HTML/data parsing
+│       │   └── scraper.py          # Main scraper logic
+│       └── egydead/
+│           ├── config.py
+│           ├── parser.py
+│           └── scraper.py
 │
 ├── frontend/
 │   ├── src/
 │   │   ├── components/
 │   │   │   ├── SeasonDownloader.jsx   # Main component
-│   │   │   └── ThemeToggle.jsx        # Dark mode toggle
+│   │   │   ├── ThemeToggle.jsx        # Dark mode toggle
+│   │   │   └── HistoryItem.jsx        # Download history
+│   │   ├── pages/
+│   │   │   ├── Home.jsx               # Home page
+│   │   │   └── History.jsx            # History page
 │   │   ├── contexts/
 │   │   │   └── ThemeContext.jsx       # Theme provider
+│   │   ├── utils/
+│   │   │   └── animations.js          # Animation utilities
 │   │   ├── App.jsx
 │   │   ├── api.js                     # API client
+│   │   ├── index.css                  # Global styles
 │   │   └── main.jsx
 │   ├── package.json
 │   └── vite.config.js
 │
 ├── docs/
-│   ├── DOCUMENTATION.md
-│   ├── STABLE_VERSION.md
-│   ├── GIT_BACKUP_STRATEGY.md
-│   ├── TESTING.md
-│   ├── TESTING_RESULTS.md
-│   ├── TESTING_SUMMARY.md
-│   └── MANUAL_TESTING_GUIDE.md
+│   ├── DOCUMENTATION.md               # Technical documentation
+│   ├── PROJECT_STATUS.md              # Current status
+│   └── MANUAL_TESTING_GUIDE.md        # Testing guide
 │
 ├── .gitignore
 ├── README.md
-├── start_backend.py
-├── run_app.py
-└── test_backend.py
+├── RELEASE_NOTES_V2.0.md
+└── package.json                       # Root package.json
 ```
 
 ---
@@ -100,13 +115,12 @@ arabic-toons-downloader/
 #### 1. Clone Repository
 ```bash
 git clone <repository-url>
-cd arabic-toons-downloader
+cd cartoon
 ```
 
 #### 2. Install Backend Dependencies
 ```bash
-cd backend
-pip install -r requirements.txt
+pip install -r backend/requirements.txt
 playwright install chromium
 ```
 
@@ -114,24 +128,18 @@ playwright install chromium
 ```bash
 cd frontend
 npm install
+cd ..
 ```
 
 ### Running the Application
 
-#### Option 1: Run Both (Recommended)
+#### Backend (Terminal 1):
 ```bash
-python run_app.py
-```
-
-#### Option 2: Run Separately
-
-**Backend:**
-```bash
-python start_backend.py
+python backend/main.py
 # Server runs on http://127.0.0.1:8000
 ```
 
-**Frontend:**
+#### Frontend (Terminal 2):
 ```bash
 cd frontend
 npm run dev
@@ -148,13 +156,13 @@ Open your browser and navigate to: `http://localhost:5173`
 ### Basic Workflow
 
 1. **Paste URL**
-   - Copy a series URL from arabic-toons.com
+   - Copy a series URL from supported sites
    - Paste it into the input field
-   - Click "Fetch"
+   - Click "Fetch Episodes"
 
 2. **Wait for Episodes**
    - Progress bar shows extraction progress
-   - Episodes appear one by one
+   - Episodes appear in real-time
    - All episodes auto-selected
 
 3. **Select Episodes** (Optional)
@@ -175,25 +183,6 @@ Open your browser and navigate to: `http://localhost:5173`
 
 ---
 
-## 🧪 Testing
-
-### Run Backend Tests
-```bash
-python test_backend.py
-```
-
-### Manual Testing
-See `docs/MANUAL_TESTING_GUIDE.md` for comprehensive testing instructions.
-
-### Test Results
-- ✅ 19/19 tests passed
-- ✅ 0 bugs found
-- ✅ 100% success rate
-
-See `docs/TESTING_RESULTS.md` for detailed results.
-
----
-
 ## 🔧 Configuration
 
 ### Backend (FastAPI)
@@ -207,55 +196,28 @@ See `docs/TESTING_RESULTS.md` for detailed results.
 
 ---
 
-## 📦 Git Branches
-
-```
-master          # Main stable branch
-├── stable      # Protected backup (v1.0-stable)
-└── ui-rework   # Active development branch
-```
-
-### Rollback to Stable
-```bash
-git checkout stable
-```
-
-See `docs/GIT_BACKUP_STRATEGY.md` for details.
-
----
-
-## 🐛 Known Issues
-
-Currently: **None** ✅
-
-All features tested and working.
-
----
-
 ## 🚧 Roadmap
 
-### Phase 2: UI Enhancements (In Progress)
-- [ ] Season Header with series name
-- [ ] Total size summary
-- [ ] Grid/Card layout
-- [ ] Enhanced animations
-- [ ] Multiple themes
+### Current Phase: Multi-Site Support
+- ✅ Arabic Toons - Fully working
+- 🚧 EgyDead - In development
+  - ✅ Episode list extraction
+  - 🚧 Video URL extraction (in progress)
 
-### Phase 3: Advanced Features
-- [ ] Download history
+### Future Enhancements
+- [ ] More site support
 - [ ] Batch download queue
 - [ ] Resume/Pause support
 - [ ] Auto-retry failed downloads
+- [ ] Download speed tracking
 
 ---
 
 ## 📝 Documentation
 
 - **Full Documentation**: `docs/DOCUMENTATION.md`
-- **Stable Version Info**: `docs/STABLE_VERSION.md`
-- **Git Strategy**: `docs/GIT_BACKUP_STRATEGY.md`
+- **Project Status**: `docs/PROJECT_STATUS.md`
 - **Testing Guide**: `docs/MANUAL_TESTING_GUIDE.md`
-- **Test Results**: `docs/TESTING_RESULTS.md`
 
 ---
 
@@ -295,6 +257,6 @@ For issues or questions:
 
 ---
 
-**Made with ❤️ for the Arabic Toons community**
+**Made with ❤️ for the Arabic cartoon community**
 
-**Version**: v1.0-stable | **Status**: ✅ Production Ready
+**Version**: v2.2-multi-site | **Status**: 🚧 In Development

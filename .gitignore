@@ -65,3 +65,13 @@ coverage/
 *.bak
 *.tmp
 .cache/
+
+# Debug files
+debug_*.html
+debug_*.png
+test_*.txt
+
+# Temporary files
+temp_repo/
+CLEANUP_PLAN.md
+
