@@ -2,8 +2,6 @@ fastapi
 uvicorn
 playwright
 beautifulsoup4
-sqlalchemy
-aiosqlite
 pydantic
-pydantic-settings
-alembic
+httpx
+requests
