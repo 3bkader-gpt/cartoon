@@ -1,213 +1,294 @@
-# Arabic Toons Downloader 📺
+<div align="center">
 
-> A high-performance media downloader for Arabic Toons content with smart caching, library management, and Plex-compatible exports.
+# 🎬 Arabic Toons Downloader
 
-![Version](https://img.shields.io/badge/version-4.2.0-blue)
-![Python](https://img.shields.io/badge/python-3.12+-green)
-![React](https://img.shields.io/badge/react-18+-61DAFB)
-![License](https://img.shields.io/badge/license-MIT-yellow)
+<img src="docs/images/home.png" width="600" alt="Arabic Toons Downloader" />
+
+### ⚡ Lightning-Fast Media Downloader for Arabic Cartoons
+
+[![Version](https://img.shields.io/badge/version-4.2.0-00d4ff?style=for-the-badge&labelColor=1a1a2e)](https://github.com/3bkader-gpt/cartoon)
+[![Python](https://img.shields.io/badge/Python-3.12+-3776ab?style=for-the-badge&logo=python&logoColor=white&labelColor=1a1a2e)](https://python.org)
+[![React](https://img.shields.io/badge/React-18+-61dafb?style=for-the-badge&logo=react&logoColor=white&labelColor=1a1a2e)](https://react.dev)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.100+-009688?style=for-the-badge&logo=fastapi&logoColor=white&labelColor=1a1a2e)](https://fastapi.tiangolo.com)
+[![License](https://img.shields.io/badge/License-MIT-f7df1e?style=for-the-badge&labelColor=1a1a2e)](LICENSE)
+
+<br/>
+
+[✨ Features](#-features) •
+[🚀 Quick Start](#-quick-start) •
+[📸 Screenshots](#-screenshots) •
+[🏗️ Architecture](#️-architecture) •
+[📖 Documentation](#-documentation)
+
+---
+
+**Download entire cartoon series with a single click.**  
+**Smart caching • Library management • Plex-ready exports**
+
+</div>
 
 ---
 
 ## ✨ Features
 
-### 🚀 Core Features
-- **Batch Episode Fetching** - Scrape entire series with one click
-- **High-Speed Metadata Retrieval** - Parallel processing for fast results
-- **Smart Backend Caching (SQLite)** - Episodes cached server-side with 24-hour freshness
-- **IDM/Aria2 Export** - Generate download lists in `.ef2` and `.txt` formats
+<table>
+<tr>
+<td width="50%">
 
-### ❤️ My Library
-- **Favorites System** - Save your favorite series for quick access
-- **One-Click Access** - Return to any series instantly from the library
-- **Synced Metadata** - Thumbnails and episode counts stored automatically
+### 🚀 Core Power
+```
+✅ Batch episode fetching
+✅ Parallel metadata retrieval
+✅ Smart SQLite caching (24h freshness)
+✅ IDM & Aria2 export formats
+✅ Direct download links
+```
 
-### ⚙️ Settings & Customization
-- **Dark/Light Mode** - Toggle theme to your preference
-- **Plex/Kodi Naming** - Export files as `Series - S01E01 - Title.mp4`
-- **One-Click Folder Access** - Open Downloads folder directly from the app
+</td>
+<td width="50%">
+
+### ❤️ Library Management
+```
+✅ Favorites system
+✅ One-click series access
+✅ Automatic metadata sync
+✅ Thumbnail previews
+✅ Episode count tracking
+```
+
+</td>
+</tr>
+<tr>
+<td width="50%">
+
+### ⚙️ Customization
+```
+✅ Dark / Light themes
+✅ Plex/Kodi file naming
+✅ Quick folder access
+✅ Sorting & filtering
+✅ Select all / Deselect all
+```
+
+</td>
+<td width="50%">
 
 ### 🎯 Quality of Life
-- **Select All / Deselect All** - Quickly manage episode selection
-- **Episode Filtering** - Search within fetched episodes
-- **Sorting Options** - Sort by episode number or title
-- **Real-time Progress** - Watch episodes load with progress indicators
+```
+✅ Real-time progress
+✅ Cache indicators
+✅ Force refresh option
+✅ Episode search
+✅ Copy individual URLs
+```
+
+</td>
+</tr>
+</table>
 
 ---
 
 ## 📸 Screenshots
 
-![Home - Season Downloader](docs/images/home.png)
-*Main downloader interface with episode grid*
+<div align="center">
 
-![Library View](docs/images/library.png)
-*My Library with favorite series*
+| Home | Library | Settings |
+|:---:|:---:|:---:|
+| ![Home](docs/images/home.png) | ![Library](docs/images/library.png) | ![Settings](docs/images/settings.png) |
+| *Main downloader interface* | *Your favorite series* | *Customize your experience* |
 
-![Settings Page](docs/images/settings.png)
-*Application settings and preferences*
-
----
-
-## 🏗️ Architecture
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│                    Frontend (React + Vite)                  │
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────┐  │
-│  │ Downloader  │  │   Library   │  │      Settings       │  │
-│  │  Component  │  │    Page     │  │        Page         │  │
-│  └──────┬──────┘  └──────┬──────┘  └──────────┬──────────┘  │
-│         │                │                     │            │
-│         └────────────────┼─────────────────────┘            │
-│                          │                                  │
-│                    API Requests                             │
-└──────────────────────────┼──────────────────────────────────┘
-                           │
-                           ▼
-┌─────────────────────────────────────────────────────────────┐
-│                   Backend (FastAPI + Python)                │
-│  ┌──────────────────────────────────────────────────────┐   │
-│  │                    SQLite Database                    │   │
-│  │  ┌─────────────┐  ┌─────────────┐  ┌──────────────┐  │   │
-│  │  │   series    │  │  episodes   │  │  favorites   │  │   │
-│  │  │  (cached)   │──│  (cached)   │  │   (legacy)   │  │   │
-│  │  │ is_favorite │  │ UNIQUE key  │  └──────────────┘  │   │
-│  │  └─────────────┘  └─────────────┘                    │   │
-│  └──────────────────────────────────────────────────────┘   │
-│                                                             │
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────┐  │
-│  │  Scraper    │  │  Playwright │  │    API Endpoints    │  │
-│  │   Engine    │──│   Browser   │  │  /season/stream     │  │
-│  │             │  │   Manager   │  │  /library/          │  │
-│  └─────────────┘  └─────────────┘  │  /open-downloads    │  │
-│                                    └─────────────────────┘  │
-└─────────────────────────────────────────────────────────────┘
-```
-
-### SQLite Caching Strategy
-- **`series` table**: Stores series URL, title, thumbnail, episode count, and `is_favorite` flag
-- **`episodes` table**: Stores individual episode data with `UNIQUE(series_url, episode_number)` constraint
-- **24-Hour Freshness**: Cache is considered fresh for 24 hours before requiring a re-fetch
-- **Upsert Pattern**: Uses SQLite's `ON CONFLICT` clause to update or insert seamlessly
+</div>
 
 ---
 
 ## 🚀 Quick Start
 
 ### Prerequisites
-- Python 3.12+
-- Node.js 18+
-- Git
+
+```bash
+# Required
+Python 3.12+
+Node.js 18+
+Git
+```
 
 ### Installation
 
 ```bash
-# Clone the repository
-git clone https://github.com/yourusername/cartoon.git
+# 1️⃣ Clone the repository
+git clone https://github.com/3bkader-gpt/cartoon.git
 cd cartoon
 
-# Install Python dependencies
+# 2️⃣ Install Python dependencies
 pip install -r requirements.txt
 playwright install chromium
 
-# Install frontend dependencies
+# 3️⃣ Install frontend dependencies
 cd frontend
 npm install
 cd ..
 ```
 
-### Running the Application
+### Running
 
-**Terminal 1 - Backend:**
+<table>
+<tr>
+<td>
+
+**🖥️ Terminal 1 - Backend**
 ```bash
 python backend/main.py
 ```
 
-**Terminal 2 - Frontend:**
+</td>
+<td>
+
+**🌐 Terminal 2 - Frontend**
 ```bash
 cd frontend
 npm run dev
 ```
 
-Open [http://localhost:5173](http://localhost:5173) in your browser.
+</td>
+</tr>
+</table>
+
+<div align="center">
+
+### 🎉 Open [http://localhost:5173](http://localhost:5173) and start downloading!
+
+</div>
 
 ---
 
-## 📦 API Endpoints
+## 🏗️ Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│                         🌐 FRONTEND (React + Vite)                      │
+│  ┌──────────────┐    ┌──────────────┐    ┌──────────────────────────┐   │
+│  │  📥 Downloader │    │  ❤️ Library   │    │      ⚙️ Settings          │   │
+│  │   Component  │    │     Page     │    │         Page             │   │
+│  └───────┬──────┘    └───────┬──────┘    └────────────┬─────────────┘   │
+│          └───────────────────┼────────────────────────┘                 │
+│                              │ API Requests                             │
+└──────────────────────────────┼──────────────────────────────────────────┘
+                               ▼
+┌─────────────────────────────────────────────────────────────────────────┐
+│                      ⚡ BACKEND (FastAPI + Python)                      │
+│                                                                         │
+│  ┌────────────────────────────────────────────────────────────────┐     │
+│  │                    🗄️ SQLite Database                           │     │
+│  │  ┌─────────────┐      ┌─────────────┐      ┌─────────────────┐ │     │
+│  │  │   series    │──────│  episodes   │      │    favorites    │ │     │
+│  │  │ is_favorite │      │ UNIQUE key  │      │    (legacy)     │ │     │
+│  │  └─────────────┘      └─────────────┘      └─────────────────┘ │     │
+│  └────────────────────────────────────────────────────────────────┘     │
+│                                                                         │
+│  ┌─────────────┐  ┌─────────────┐  ┌────────────────────────────────┐   │
+│  │  🔍 Scraper  │  │ 🎭 Playwright │  │        📡 API Endpoints        │   │
+│  │    Engine   │──│   Browser   │  │  /season/stream  /library/    │   │
+│  └─────────────┘  └─────────────┘  │  /open-downloads /health      │   │
+│                                    └────────────────────────────────┘   │
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 📡 API Reference
 
 | Method | Endpoint | Description |
-|--------|----------|-------------|
-| `GET` | `/api/season/stream` | Stream episode data (with caching) |
-| `GET` | `/api/library/` | Get all favorite series |
-| `POST` | `/api/library/toggle` | Toggle favorite status |
-| `GET` | `/api/library/check` | Check if URL is favorited |
-| `GET` | `/api/search` | Search for series |
-| `POST` | `/api/open-downloads` | Open Downloads folder |
-| `GET` | `/api/health` | Health check |
+|:------:|----------|-------------|
+| `GET` | `/api/season/stream` | 📺 Stream episode data |
+| `GET` | `/api/library/` | ❤️ Get favorites |
+| `POST` | `/api/library/toggle` | 🔄 Toggle favorite |
+| `GET` | `/api/library/check` | ✅ Check if favorited |
+| `GET` | `/api/search` | 🔍 Search series |
+| `POST` | `/api/open-downloads` | 📁 Open downloads folder |
+| `GET` | `/api/health` | 💚 Health check |
 
 ---
 
-## 🔧 Configuration
-
-Settings are stored in the browser's `localStorage`:
-
-| Key | Values | Description |
-|-----|--------|-------------|
-| `theme` | `dark` / `light` | UI theme preference |
-| `plex_naming` | `true` / `false` | Enable Plex-style file naming |
-
----
-
-## 📁 Project Structure
+## 🗂️ Project Structure
 
 ```
 cartoon/
-├── backend/
+├── 🐍 backend/
 │   ├── api/
-│   │   ├── main_router.py      # Main API endpoints
-│   │   └── library_router.py   # Library/favorites API
+│   │   ├── main_router.py      # Core API
+│   │   └── library_router.py   # Favorites API
 │   ├── scraper/
 │   │   └── scraper.py          # Web scraper
-│   ├── core/
-│   │   └── browser.py          # Playwright manager
 │   ├── database.py             # SQLite operations
-│   └── main.py                 # FastAPI app entry
-├── frontend/
+│   └── main.py                 # App entry
+│
+├── ⚛️ frontend/
 │   ├── src/
 │   │   ├── components/
-│   │   │   └── SeasonDownloader.jsx
 │   │   ├── pages/
-│   │   │   ├── Library.jsx
-│   │   │   └── Settings.jsx
 │   │   ├── App.jsx
 │   │   └── api.js
 │   └── package.json
-├── docs/
+│
+├── 📚 docs/
+│   ├── images/
 │   ├── PROJECT_STATUS.md
 │   └── ROADMAP.md
-└── README.md
+│
+├── 📄 README.md
+├── 📄 README_AR.md
+└── 📄 LICENSE
 ```
 
 ---
 
 ## 🗺️ Roadmap
 
-- [x] **v3.0** - Basic downloader with IndexedDB caching
-- [x] **v4.0** - SQLite backend migration
-- [x] **v4.1** - My Library feature
-- [x] **v4.2** - Settings page with Plex naming
-- [ ] **v5.0** - Internal Download Manager (no IDM required)
-- [ ] **v6.0** - Multi-source support
+<div align="center">
+
+| Version | Feature | Status |
+|:-------:|---------|:------:|
+| v3.0 | Basic downloader + IndexedDB | ✅ |
+| v4.0 | SQLite backend migration | ✅ |
+| v4.1 | My Library feature | ✅ |
+| v4.2 | Settings + Plex naming | ✅ |
+| **v5.0** | **Internal Download Manager** | 🔜 |
+| v6.0 | Multi-source support | 📋 |
+
+</div>
+
+---
+
+## 🤝 Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
 
 ---
 
 ## 📄 License
 
-MIT License - See [LICENSE](LICENSE) for details.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ---
 
-## 🙏 Acknowledgments
+<div align="center">
 
-- Built with [FastAPI](https://fastapi.tiangolo.com/), [React](https://react.dev/), and [Playwright](https://playwright.dev/)
-- Optimized for [arabic-toons.com](https://arabic-toons.com) content
+### ⭐ Star this repo if you find it useful!
+
+<br/>
+
+**Built with ❤️ using [FastAPI](https://fastapi.tiangolo.com) • [React](https://react.dev) • [Playwright](https://playwright.dev)**
+
+<br/>
+
+[![Made with Python](https://img.shields.io/badge/Made%20with-Python-3776ab?style=flat-square&logo=python&logoColor=white)](https://python.org)
+[![Made with React](https://img.shields.io/badge/Made%20with-React-61dafb?style=flat-square&logo=react&logoColor=white)](https://react.dev)
+[![Powered by FastAPI](https://img.shields.io/badge/Powered%20by-FastAPI-009688?style=flat-square&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
+
+</div>

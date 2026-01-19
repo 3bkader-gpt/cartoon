@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Settings as SettingsIcon, Type, Moon, Sun, FolderOpen, Globe, Info, HardDrive } from 'lucide-react';
 import axios from 'axios';
-
-const API_BASE_URL = 'http://127.0.0.1:8000';
+import { API_BASE_URL, APP_VERSION } from '../config';
 
 const Settings = () => {
     const [plexNaming, setPlexNaming] = useState(false);
@@ -175,7 +174,7 @@ const Settings = () => {
                             <Info size={18} />
                             Version
                         </span>
-                        <span className="font-mono font-bold text-gray-900 dark:text-white">v4.2.0</span>
+                        <span className="font-mono font-bold text-gray-900 dark:text-white">v{APP_VERSION}</span>
                     </div>
                 </div>
             </div>

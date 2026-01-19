@@ -4,6 +4,7 @@ import { streamSeason } from '../api';
 import { historyStorage } from '../utils/historyStorage';
 import { fadeIn, slideUp, staggerContainer, cardAnimation } from '../utils/animations';
 import axios from 'axios';
+import { API_BASE_URL } from '../config';
 
 const SeasonDownloader = forwardRef((props, ref) => {
     const [url, setUrl] = useState('');
@@ -38,7 +39,7 @@ const SeasonDownloader = forwardRef((props, ref) => {
     const checkFavoriteStatus = async () => {
         if (!url) return;
         try {
-            const response = await axios.get('http://127.0.0.1:8000/api/library/check', {
+            const response = await axios.get(`${API_BASE_URL}/api/library/check`, {
                 params: { url }
             });
             setIsFavorited(response.data.is_favorite);
@@ -56,7 +57,7 @@ const SeasonDownloader = forwardRef((props, ref) => {
         }
 
         try {
-            const response = await axios.post('http://127.0.0.1:8000/api/library/toggle', {
+            const response = await axios.post(`${API_BASE_URL}/api/library/toggle`, {
                 url: url,
                 title: seriesTitle || 'Unknown Series',
                 thumbnail: seasonMetadata?.poster || null
@@ -742,7 +743,7 @@ const SeasonDownloader = forwardRef((props, ref) => {
                                                 </button>
 
                                                 <a
-                                                    href={`http://127.0.0.1:8000/api/proxy?url=${encodeURIComponent(ep.video_url)}&filename=${encodeURIComponent(ep.video_info?.filename || 'episode.mp4')}`}
+                                                    href={`${API_BASE_URL}/api/proxy?url=${encodeURIComponent(ep.video_url)}&filename=${encodeURIComponent(ep.video_info?.filename || 'episode.mp4')}`}
                                                     download
                                                     className="flex-1 px-3 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-xs font-medium transition-colors flex items-center justify-center gap-1 shadow-lg shadow-green-600/20"
                                                     title="Download Default"
@@ -775,7 +776,7 @@ const SeasonDownloader = forwardRef((props, ref) => {
                                                             {ep.sources.map((source, sIdx) => (
                                                                 <a
                                                                     key={sIdx}
-                                                                    href={`http://127.0.0.1:8000/api/proxy?url=${encodeURIComponent(source.url)}&filename=${encodeURIComponent(ep.video_info?.filename?.replace('.mp4', `_${source.quality}.mp4`) || 'episode.mp4')}`}
+                                                                    href={`${API_BASE_URL}/api/proxy?url=${encodeURIComponent(source.url)}&filename=${encodeURIComponent(ep.video_info?.filename?.replace('.mp4', `_${source.quality}.mp4`) || 'episode.mp4')}`}
                                                                     target="_blank"
                                                                     rel="noopener noreferrer"
                                                                     className="flex items-center justify-between px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-700 text-xs text-gray-700 dark:text-gray-200 border-b border-gray-100 dark:border-gray-700 last:border-0"
