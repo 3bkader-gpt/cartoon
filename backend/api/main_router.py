@@ -156,7 +156,6 @@ from fastapi import Request
 
 @router.on_event("shutdown")
 def shutdown_event():
-    global _scraper
     if _scraper and _scraper.browser_manager:
         print("[SHUTDOWN] Closing browser...", flush=True)
         _scraper.browser_manager.close()
