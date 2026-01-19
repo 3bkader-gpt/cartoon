@@ -283,6 +283,16 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 <br/>
 
+---
+
+### 👨‍💻 Created by
+
+<a href="https://github.com/3bkader-gpt">
+  <img src="https://img.shields.io/badge/Mohamed%20Omar-Developer-blueviolet?style=for-the-badge&logo=github&logoColor=white" alt="Mohamed Omar" />
+</a>
+
+<br/><br/>
+
 **Built with ❤️ using [FastAPI](https://fastapi.tiangolo.com) • [React](https://react.dev) • [Playwright](https://playwright.dev)**
 
 <br/>
@@ -290,5 +300,9 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 [![Made with Python](https://img.shields.io/badge/Made%20with-Python-3776ab?style=flat-square&logo=python&logoColor=white)](https://python.org)
 [![Made with React](https://img.shields.io/badge/Made%20with-React-61dafb?style=flat-square&logo=react&logoColor=white)](https://react.dev)
 [![Powered by FastAPI](https://img.shields.io/badge/Powered%20by-FastAPI-009688?style=flat-square&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
+
+<br/>
+
+**© 2026 Mohamed Omar. All rights reserved.**
 
 </div>

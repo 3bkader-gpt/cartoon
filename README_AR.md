@@ -284,6 +284,16 @@ cartoon/
 
 <br/>
 
+---
+
+### 👨‍💻 المطوّر
+
+<a href="https://github.com/3bkader-gpt">
+  <img src="https://img.shields.io/badge/محمد%20عمر-مطوّر-blueviolet?style=for-the-badge&logo=github&logoColor=white" alt="Mohamed Omar" />
+</a>
+
+<br/><br/>
+
 **صُنع بـ ❤️ باستخدام [FastAPI](https://fastapi.tiangolo.com) • [React](https://react.dev) • [Playwright](https://playwright.dev)**
 
 <br/>
@@ -291,6 +301,10 @@ cartoon/
 [![Made with Python](https://img.shields.io/badge/صُنع%20بـ-Python-3776ab?style=flat-square&logo=python&logoColor=white)](https://python.org)
 [![Made with React](https://img.shields.io/badge/صُنع%20بـ-React-61dafb?style=flat-square&logo=react&logoColor=white)](https://react.dev)
 [![Powered by FastAPI](https://img.shields.io/badge/يعمل%20بـ-FastAPI-009688?style=flat-square&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
+
+<br/>
+
+**© 2026 محمد عمر. جميع الحقوق محفوظة.**
 
 </div>
 
