@@ -64,7 +64,7 @@ function App() {
         </main>
 
         <footer className="mt-20 text-center text-gray-500 dark:text-gray-400 text-sm pb-8">
-          <p>© 2025 Arabic Toons Downloader (v3.1). Built for speed.</p>
+          <p>© 2026 Arabic Toons Downloader (v4.2). Built for speed.</p>
         </footer>
       </div>
     </Router>

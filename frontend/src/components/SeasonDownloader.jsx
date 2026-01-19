@@ -1,9 +1,8 @@
-import React, { useState, useEffect, useMemo, forwardRef, useImperativeHandle } from 'react';
+import React, { useState, useEffect, useMemo, forwardRef, useImperativeHandle, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { streamSeason } from '../api';
 import { historyStorage } from '../utils/historyStorage';
 import { fadeIn, slideUp, staggerContainer, cardAnimation } from '../utils/animations';
-import cacheManager from '../utils/cache';
 import axios from 'axios';
 
 const SeasonDownloader = forwardRef((props, ref) => {
@@ -18,6 +17,9 @@ const SeasonDownloader = forwardRef((props, ref) => {
     const [isCached, setIsCached] = useState(false);
     const [showToast, setShowToast] = useState(false);
 
+    // Guard to prevent duplicate fetches (React StrictMode runs effects twice)
+    const fetchInProgress = useRef(false);
+
     // Sorting & Filtering
     const [sortBy, setSortBy] = useState('episode');
     const [sortOrder, setSortOrder] = useState('asc');
@@ -27,50 +29,39 @@ const SeasonDownloader = forwardRef((props, ref) => {
     const [isFavorited, setIsFavorited] = useState(false);
     const [favoriteId, setFavoriteId] = useState(null);
 
-    // Check favorite status when series title changes
+    // Check favorite status when URL changes
     useEffect(() => {
-        if (!seriesTitle || seriesTitle === 'Unknown Series') return;
+        if (!url) return;
         checkFavoriteStatus();
-    }, [seriesTitle]);
+    }, [url]);
 
     const checkFavoriteStatus = async () => {
-        if (!seriesTitle) return;
+        if (!url) return;
         try {
-            const response = await axios.get('http://127.0.0.1:8000/api/library/');
-            const found = response.data.find(f => f.url === url);
-            if (found) {
-                setIsFavorited(true);
-                setFavoriteId(found.id);
-            } else {
-                setIsFavorited(false);
-                setFavoriteId(null);
-            }
+            const response = await axios.get('http://127.0.0.1:8000/api/library/check', {
+                params: { url }
+            });
+            setIsFavorited(response.data.is_favorite);
         } catch (err) {
             console.error('Error checking favorite:', err);
+            setIsFavorited(false);
         }
     };
 
     const toggleFavorite = async () => {
-        // Safety check: ensure we have metadata before trying to save
-        if (!seriesTitle || !seasonMetadata) {
-            console.warn("Cannot toggle favorite: Missing metadata");
+        // Safety check: ensure we have URL
+        if (!url) {
+            console.warn("Cannot toggle favorite: Missing URL");
             return;
         }
 
         try {
-            if (isFavorited) {
-                await axios.delete('http://127.0.0.1:8000/api/library/', { params: { url } });
-                setIsFavorited(false);
-                setFavoriteId(null);
-            } else {
-                const response = await axios.post('http://127.0.0.1:8000/api/library/', {
-                    title: seriesTitle,
-                    url: url,
-                    thumbnail: seasonMetadata.poster
-                });
-                setIsFavorited(true);
-                setFavoriteId(response.data.id);
-            }
+            const response = await axios.post('http://127.0.0.1:8000/api/library/toggle', {
+                url: url,
+                title: seriesTitle || 'Unknown Series',
+                thumbnail: seasonMetadata?.poster || null
+            });
+            setIsFavorited(response.data.is_favorite);
         } catch (err) {
             console.error('Error toggling favorite:', err);
             alert('Failed to update library');
@@ -196,6 +187,13 @@ const SeasonDownloader = forwardRef((props, ref) => {
         const urlToUse = overrideUrl || url;
         if (!urlToUse) return;
 
+        // Prevent duplicate fetches (React StrictMode protection)
+        if (fetchInProgress.current) {
+            console.log("Fetch already in progress, skipping duplicate call");
+            return;
+        }
+        fetchInProgress.current = true;
+
         setLoading(true);
         setError(null);
         setEpisodes([]);
@@ -204,37 +202,19 @@ const SeasonDownloader = forwardRef((props, ref) => {
         setIsCached(false);
 
         try {
-            // Check cache first (unless force refresh)
-            if (!forceRefresh) {
-                const cachedData = await cacheManager.getFullSeason(urlToUse);
-                if (cachedData && cachedData.episodes.length > 0) {
-                    // Check if cached metadata has valid title
-                    if (cachedData.metadata?.seriesName === "Unknown Series") {
-                        console.log("Cached Series Title is 'Unknown', forcing refresh...");
-                        // Do NOT return here, let it fall through to backend fetch
-                    } else {
-                        // Load from cache instantly
-                        setEpisodes(cachedData.episodes);
-                        setSeriesTitle(cachedData.metadata?.seriesName || '');
-                        setIsCached(true);
-                        setLoading(false);
-
-                        // Show toast
-                        setShowToast(true);
-                        setTimeout(() => setShowToast(false), 3000);
-
-                        return;
-                    }
-                }
-            }
-
-            // Fetch from backend
+            // Fetch from backend (backend handles caching)
             const fetchedEpisodes = [];
             await streamSeason(urlToUse, (data) => {
                 if (data.type === 'start') {
                     setProgress({ current: 0, total: data.total, title: 'Starting...' });
                     if (data.series_title) {
                         setSeriesTitle(data.series_title);
+                    }
+                    // Check if this is from cache
+                    if (data.cached) {
+                        setIsCached(true);
+                        setShowToast(true);
+                        setTimeout(() => setShowToast(false), 3000);
                     }
                 } else if (data.type === 'progress') {
                     setProgress({
@@ -248,50 +228,18 @@ const SeasonDownloader = forwardRef((props, ref) => {
                 } else if (data.type === 'error') {
                     console.error("Episode error:", data);
                 }
-            });
-
-            // Save to cache after successful fetch
-            if (fetchedEpisodes.length > 0) {
-                // Calculate metadata for cache
-                const firstTitle = fetchedEpisodes[0]?.title || '';
-                const derivedSeriesName = firstTitle
-                    .replace(/\s*-?\s*(الحلقة|Episode|E|الموسم|Season|S)\s*\d+.*$/i, '')
-                    .replace(/\s*-?\s*\d+.*$/i, '')
-                    .trim();
-                const seriesName = seriesTitle || derivedSeriesName || 'Unknown Series';
-
-                const totalSizeBytes = fetchedEpisodes.reduce((sum, ep) => sum + (ep.metadata?.size_bytes || 0), 0);
-                const formatSize = (bytes) => {
-                    if (bytes >= 1024 * 1024 * 1024) {
-                        return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`;
-                    } else if (bytes >= 1024 * 1024) {
-                        return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
-                    } else {
-                        return `${(bytes / 1024).toFixed(2)} KB`;
-                    }
-                };
-
-                const metadata = {
-                    seriesName,
-                    totalEpisodes: fetchedEpisodes.length,
-                    totalSize: formatSize(totalSizeBytes),
-                    totalSizeBytes,
-                    poster: fetchedEpisodes[0]?.thumbnail || null
-                };
-
-                await cacheManager.saveSeason(url, metadata, fetchedEpisodes);
-            }
+            }, forceRefresh);
         } catch (err) {
             setError(err.message || 'Failed to fetch episodes');
         } finally {
             setLoading(false);
             setProgress(null);
+            fetchInProgress.current = false;  // Reset guard
         }
     };
 
     const handleRefresh = async () => {
         if (!url) return;
-        await cacheManager.deleteSeason(url);
         await handleFetch(true);
     };
 
@@ -442,7 +390,7 @@ const SeasonDownloader = forwardRef((props, ref) => {
                     dir="ltr"
                 />
                 <button
-                    onClick={handleFetch}
+                    onClick={() => handleFetch()}
                     disabled={loading || !url}
                     className="px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold text-lg shadow-lg shadow-blue-600/30 disabled:opacity-50 disabled:cursor-not-allowed transition-all transform hover:scale-105 active:scale-95"
                 >

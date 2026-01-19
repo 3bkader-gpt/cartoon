@@ -32,8 +32,8 @@ export const getSeason = async (url) => {
     }
 };
 
-export const streamSeason = async (url, onEvent) => {
-    const fullUrl = `${API_URL}/season/stream?url=${encodeURIComponent(url)}`;
+export const streamSeason = async (url, onEvent, forceRefresh = false) => {
+    const fullUrl = `${API_URL}/season/stream?url=${encodeURIComponent(url)}&force_refresh=${forceRefresh}`;
 
     try {
         const response = await fetch(fullUrl);

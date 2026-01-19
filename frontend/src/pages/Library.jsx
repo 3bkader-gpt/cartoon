@@ -33,7 +33,8 @@ const Library = () => {
         if (!window.confirm('Remove from library?')) return;
 
         try {
-            await axios.delete(`${API_BASE_URL}/api/library/`, { params: { url } });
+            // Use toggle endpoint to remove favorite
+            await axios.post(`${API_BASE_URL}/api/library/toggle`, { url });
             setFavorites(prev => prev.filter(item => item.url !== url));
         } catch (err) {
             alert('Failed to remove favorite');
@@ -102,7 +103,7 @@ const Library = () => {
                 <AnimatePresence>
                     {favorites.map((show) => (
                         <motion.div
-                            key={show.id}
+                            key={show.url}
                             layout
                             initial={{ opacity: 0, scale: 0.9 }}
                             animate={{ opacity: 1, scale: 1 }}
@@ -145,7 +146,7 @@ const Library = () => {
                                     {show.title}
                                 </h3>
                                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                                    Added {new Date(show.created_at).toLocaleDateString()}
+                                    {show.total_episodes > 0 ? `${show.total_episodes} episodes` : 'Click to load'}
                                 </p>
                             </div>
                         </motion.div>
