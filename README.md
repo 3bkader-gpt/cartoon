@@ -127,6 +127,64 @@ graph TD
 
 ---
 
+## 🛠️ Advanced
+
+<details>
+<summary><b>🔧 Configuration</b></summary>
+<br/>
+
+The frontend API URL can be configured during build time:
+
+```bash
+# Linux/Mac
+export VITE_API_URL=http://your-server-ip:8000
+npm run build
+
+# Windows (PowerShell)
+$env:VITE_API_URL="http://your-server-ip:8000"
+npm run build
+```
+</details>
+
+<details>
+<summary><b>❓ Troubleshooting</b></summary>
+<br/>
+
+**1. Browser Error (Playwright)**
+> *Error: Executable doesn't exist at ...*
+```bash
+playwright install chromium
+```
+
+**2. Port 8000 is Busy**
+> *Error: Address already in use*
+```bash
+# Windows
+taskkill /F /IM python.exe
+```
+
+**3. Frontend Connection Error**
+> Ensure backend is running on port 8000. Check console logs for CORS errors.
+</details>
+
+<details>
+<summary><b>🚀 Production Deployment</b></summary>
+<br/>
+
+1. **Build Frontend:**
+   ```bash
+   cd frontend
+   npm run build
+   ```
+2. **Serve:**
+   Copy the `dist` folder to your web server (Nginx/Apache) or serve with Python:
+   ```bash
+   python -m http.server 5173 --directory frontend/dist
+   ```
+</details>
+
+---
+
 ## 🗺️ Roadmap
 
 - [x] **v3.0** - Core Downloader (IndexedDB)

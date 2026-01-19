@@ -129,6 +129,64 @@ graph TD
 
 ---
 
+## 🛠️ خيارات متقدمة
+
+<details>
+<summary><b>🔧 الإعدادات (Configuration)</b></summary>
+<br/>
+
+يمكنك تغيير رابط الـ API أثناء عملية البناء (Build):
+
+```bash
+# Linux/Mac
+export VITE_API_URL=http://your-server-ip:8000
+npm run build
+
+# Windows (PowerShell)
+$env:VITE_API_URL="http://your-server-ip:8000"
+npm run build
+```
+</details>
+
+<details>
+<summary><b>❓ حل المشاكل (Troubleshooting)</b></summary>
+<br/>
+
+**1. خطأ في المتصفح (Playwright)**
+> *Error: Executable doesn't exist at ...*
+```bash
+playwright install chromium
+```
+
+**2. البورت 8000 مشغول**
+> *Error: Address already in use*
+```bash
+# Windows
+taskkill /F /IM python.exe
+```
+
+**3. خطأ في الاتصال**
+> تأكد أن السيرفر يعمل على المنفذ 8000 وأن الـ API reachable.
+</details>
+
+<details>
+<summary><b>🚀 الرفع على سيرفر (Deployment)</b></summary>
+<br/>
+
+1. **بناء الواجهة:**
+   ```bash
+   cd frontend
+   npm run build
+   ```
+2. **التشغيل:**
+   انسخ مجلد `dist` إلى السيرفر (Nginx/Apache) أو شغله بـ Python:
+   ```bash
+   python -m http.server 5173 --directory frontend/dist
+   ```
+</details>
+
+---
+
 ## 🗺️ خريطة الطريق
 
 - [x] **v3.0** - المحمّل الأساسي (IndexedDB)
