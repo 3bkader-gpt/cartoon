@@ -1,0 +1,12 @@
+services:
+  app:
+    build: .
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./downloads:/app/downloads
+      - ./anime_cache.db:/app/anime_cache.db
+      - ./cartoon.db:/app/cartoon.db
+    environment:
+      - VITE_API_URL=http://localhost:8000
+    restart: unless-stopped

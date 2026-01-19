@@ -28,6 +28,14 @@ from fastapi.middleware.cors import CORSMiddleware
 from backend.api.main_router import router as api_router
 from backend.api.library_router import router as library_router
 import uvicorn
+
+app = FastAPI(
+    title="Arabic Toons Downloader API",
+    description="High-performance backend API for downloading and managing Arabic cartoons. Features intelligent caching, library management, and real-time streaming.",
+    version="4.2.0",
+    docs_url="/docs",
+    redoc_url="/redoc"
+)
 import logging
 import sys
 
@@ -42,7 +50,7 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-app = FastAPI(title="Arabic Toons Downloader API")
+# App already initialized above
 
 # Configure CORS
 app.add_middleware(
