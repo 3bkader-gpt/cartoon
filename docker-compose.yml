@@ -1,12 +1,24 @@
 services:
-  app:
-    build: .
-    ports:
-      - "8000:8000"
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    environment:
+      - PYTHONUNBUFFERED=1
     volumes:
       - ./downloads:/app/downloads
       - ./anime_cache.db:/app/anime_cache.db
       - ./cartoon.db:/app/cartoon.db
-    environment:
-      - VITE_API_URL=http://localhost:8000
+    ports:
+      - "8020:8000"
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    depends_on:
+      - backend
+    ports:
+      - "8021:80"
     restart: unless-stopped
