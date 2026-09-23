@@ -12,11 +12,12 @@
 [![TailwindCSS](https://img.shields.io/badge/TailwindCSS-Styling-06B6D4.svg?logo=tailwindcss&logoColor=white)](https://tailwindcss.com/)
 [![SQLite](https://img.shields.io/badge/SQLite-Local%20Cache-003B57.svg?logo=sqlite&logoColor=white)](https://www.sqlite.org/)
 [![Docker](https://img.shields.io/badge/Docker-Compose-2496ED.svg?logo=docker&logoColor=white)](https://www.docker.com/)
+[![Cloudflare Pages](https://img.shields.io/badge/Live%20Demo-Cloudflare%20Pages-F38020.svg?logo=cloudflare&logoColor=white)](https://cartoon-stream.pages.dev/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
 **1-Click Season Batch Downloader • Playwright Scraping Layer • Media Server (Plex/Kodi) Formatting**
 
-[Pipeline Architecture](#-pipeline-architecture) • [Core Capabilities](#-core-capabilities) • [Docker Deployment](#-docker-deployment) • [Local Development](#-local-development)
+[🌐 Live Web UI](https://cartoon-stream.pages.dev/) • [Pipeline Architecture](#-pipeline-architecture) • [Core Capabilities](#-core-capabilities) • [Docker Deployment](#-docker-deployment) • [Local Development](#-local-development)
 
 </div>
 
